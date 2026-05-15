@@ -19,23 +19,25 @@ data class ArticleDetailUiState(
 )
 
 class ArticleDetailViewModel(
-    savedStateHandle: SavedStateHandle,
-    private val repository: ArticlesRepository = DefaultArticlesRepository(),
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
+
+    private val repository: ArticlesRepository = DefaultArticlesRepository()
 
     private val _uiState = MutableStateFlow(ArticleDetailUiState())
     val uiState: StateFlow<ArticleDetailUiState> = _uiState.asStateFlow()
 
-    private val articleId: Int = checkNotNull(savedStateHandle.get<Int>("articleId"))
+    private val articleId: Int? = savedStateHandle.get<Int>("articleId")
 
     init {
-        loadArticle()
+        articleId?.let { loadArticle() }
     }
 
     fun loadArticle() {
+        val id = articleId ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            repository.getArticle(articleId)
+            repository.getArticle(id)
                 .onSuccess { article ->
                     _uiState.update { it.copy(article = article, isLoading = false) }
                 }

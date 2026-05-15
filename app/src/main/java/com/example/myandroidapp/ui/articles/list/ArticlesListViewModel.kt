@@ -23,9 +23,10 @@ data class ArticlesListUiState(
 )
 
 class ArticlesListViewModel(
-    savedStateHandle: SavedStateHandle,
-    private val repository: ArticlesRepository = DefaultArticlesRepository(),
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
+
+    private val repository: ArticlesRepository = DefaultArticlesRepository()
 
     private val _uiState = MutableStateFlow(ArticlesListUiState())
     val uiState: StateFlow<ArticlesListUiState> = _uiState.asStateFlow()
