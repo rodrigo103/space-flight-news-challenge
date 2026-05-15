@@ -114,24 +114,370 @@ tests/
 
 ---
 
-## 6. Clean Architecture + Use Cases (para cuando pregunten)
+## 6. Clean Architecture + Repository Pattern (profundización)
 
-**Texto de referencia:**
+### 6.1 ¿Qué es el Repository Pattern?
 
-> *"En este proyecto no implementé Clean Architecture formal con use cases porque es un challenge de 2 pantallas con una sola fuente de datos (API REST). Agregar una capa `domain` con use cases habría sido over-engineering: cada use case sería un pasamanos que delega directo al repositorio."*
->
-> *"Pero conozco el patrón. Clean Architecture separa el código en 3 capas:*
->
-> - ***data**: APIs, Room, repositorios concretos*
-> - ***domain**: entidades de negocio, interfaces de repositorio, use cases*
-> - ***presentation**: ViewModels, UI, navegación*
->
-> *Los use cases encapsulan una operación de negocio atómica (`SearchCitiesUseCase`, `FetchCitiesUseCase`, etc.). Se justifican cuando:*
-> 1. *La lógica de negocio se reutiliza entre varios ViewModels*
-> 2. *Hay reglas complejas (validaciones, transformaciones, caching)*
-> 3. *Se combinan múltiples fuentes de datos (API + Room + preferencias)*
->
-> *Para este challenge, el Repository Pattern alcanza. Pero si hubiera tenido que agregar offline-first con Room o compartir lógica entre pantallas, habría usado use cases."*
+Es un patrón que **abstrae la fuente de datos detrás de una interfaz.** El que consume los datos (ViewModel, Use Case) no sabe ni le importa de dónde vienen: pueden venir de una API REST, una base de datos Room, un archivo local, o un mock de prueba.
+
+```
+ViewModel/UseCase → ArticlesRepository (interfaz) → DefaultArticlesRepository
+                                                       ├── RemoteDataSource (API)
+                                                       └── LocalDataSource (Room)
+```
+
+**Ventajas:**
+
+| Beneficio | Explicación |
+|---|---|
+| Testeabilidad | En tests inyectás un mock del repositorio sin tocar la red |
+| Swappable | Cambiás la fuente de datos sin tocar ViewModels ni UI |
+| Single Source of Truth | El repositorio decide qué datos retornar y de dónde |
+| Separación | La UI no sabe de Retrofit ni Room |
+
+**En tu proyecto actual:**
+
+```kotlin
+interface ArticlesRepository {
+    suspend fun getArticles(limit: Int, offset: Int): Result<List<Article>>
+    suspend fun searchArticles(query: String, limit: Int): Result<List<Article>>
+    suspend fun getArticle(id: Int): Result<Article>
+}
+```
+
+El ViewModel solo conoce esta interfaz. En producción Hilt inyecta `DefaultArticlesRepository(apiService)`. En tests, MockK mockea la interfaz. El ViewModel es el mismo en ambos casos.
+
+---
+
+### 6.2 Las tres capas de Clean Architecture
+
+Clean Architecture organiza el código en capas concéntricas donde **las capas internas no conocen a las externas.**
+
+```
+┌──────────────────────────────────────────────┐
+│  presentation (UI, ViewModels, navegación)   │
+│  ┌────────────────────────────────────────┐  │
+│  │  domain (entidades, interfaces, casos) │  │
+│  │  ┌──────────────────────────────────┐  │  │
+│  │  │  data (APIs, DB, implementaciones)│  │  │
+│  │  └──────────────────────────────────┘  │  │
+│  └────────────────────────────────────────┘  │
+└──────────────────────────────────────────────┘
+
+       data → domain ← presentation
+       (nadie depende de domain, domain depende de nadie)
+```
+
+---
+
+#### 6.2.1 Capa `data` — "Cómo obtengo y guardo los datos"
+
+**Contiene:** API services, DAOs, DataSources, implementaciones de repositorios, DTOs, entities de Room, mappers.
+
+**No contiene:** Lógica de negocio, lógica de UI, ViewModels.
+
+**Lo que NUNCA hace:** Decidir qué datos mostrar. Solo los obtiene y los devuelve.
+
+**Ejemplo concreto si el proyecto tuviera Room:**
+
+```kotlin
+// data/datasource/remote/api/ApiService.kt
+interface ApiService {
+    @GET("articles/")
+    suspend fun getArticles(
+        @Query("limit") limit: Int, @Query("offset") offset: Int
+    ): Response<ArticleResponse>
+}
+
+// data/datasource/remote/RemoteDataSource.kt
+class RemoteDataSource @Inject constructor(private val api: ApiService) {
+    suspend fun fetchArticles(limit: Int, offset: Int) =
+        api.getArticles(limit, offset)
+}
+
+// data/datasource/remote/models/ArticleDto.kt
+@Serializable
+data class ArticleDto(
+    val id: Int,
+    val title: String,
+    @SerialName("image_url") val imageUrl: String?,
+    // ...
+)
+
+// data/datasource/local/dao/ArticlesDao.kt
+@Dao
+interface ArticlesDao {
+    @Query("SELECT * FROM articles ORDER BY published_at DESC")
+    fun getAll(): PagingSource<Int, ArticleEntity>
+
+    @Insert(onConflict = REPLACE)
+    suspend fun insertAll(articles: List<ArticleEntity>)
+
+    @Query("DELETE FROM articles")
+    suspend fun deleteAll()
+}
+
+// data/datasource/local/entities/ArticleEntity.kt
+@Entity(tableName = "articles")
+data class ArticleEntity(
+    @PrimaryKey val id: Int,
+    val title: String,
+    val imageUrl: String?,
+    // ...
+)
+
+// data/datasource/local/LocalDataSource.kt
+class LocalDataSource @Inject constructor(private val dao: ArticlesDao) {
+    fun getArticlesPaged() = dao.getAll()
+    suspend fun cacheArticles(articles: List<ArticleEntity>) = dao.insertAll(articles)
+    suspend fun clearCache() = dao.deleteAll()
+}
+
+// data/Mappers.kt — convierte entre capas
+fun ArticleDto.toEntity() = ArticleEntity(
+    id = id, title = title, imageUrl = imageUrl
+)
+
+fun ArticleEntity.toDomain() = Article(
+    id = id, title = title, imageUrl = imageUrl
+)
+
+// data/repository/ArticlesRepositoryImpl.kt
+class ArticlesRepositoryImpl @Inject constructor(
+    private val remote: RemoteDataSource,
+    private val local: LocalDataSource,
+) : ArticlesRepository {
+
+    override fun getArticles(limit: Int, offset: Int): Flow<PagingData<Article>> =
+        Pager(PagingConfig(pageSize = 20)) { local.getArticlesPaged() }
+            .flow
+            .map { it.map { entity -> entity.toDomain() } }
+
+    override suspend fun refreshArticles() {
+        val response = remote.fetchArticles(20, 0)
+        if (response.isSuccessful) {
+            local.clearCache()
+            local.cacheArticles(response.body()!!.results.map { it.toEntity() })
+        }
+    }
+}
+```
+
+**Puntos clave para defender:**
+
+- *"Los DataSources (`RemoteDataSource`, `LocalDataSource`) son wrappers finos sobre APIs y DAOs. No tienen lógica, solo exponen los datos."*
+- *"Los mappers (`toEntity()`, `toDomain()`) mantienen los modelos de cada capa separados. Un cambio en el JSON de la API no rompe la UI."*
+- *"El repositorio implementado (`ArticlesRepositoryImpl`) orquesta ambos data sources. Decide cuándo usar caché y cuándo pegarle a la red. Esto es lo que hace que la app sea offline-first si se necesita."*
+
+---
+
+#### 6.2.2 Capa `domain` — "Qué reglas de negocio aplican"
+
+**Contiene:** Entidades de dominio, interfaces de repositorio, use cases.
+
+**No contiene:** Nada de Android (`Context`, `ViewModel`), nada de frameworks (`@GET`, `@Entity`).
+
+**Es la capa más pura y la más importante.** Si migrás de Android a KMM o a un backend, esta capa se reutiliza.
+
+**Ejemplo concreto:**
+
+```kotlin
+// domain/models/Article.kt
+data class Article(
+    val id: Int,
+    val title: String,
+    val imageUrl: String?,
+    val summary: String,
+    val publishedAt: String?,
+    val newsSite: String?,
+)
+
+// domain/repository/ArticlesRepository.kt (interfaz, NO implementación)
+interface ArticlesRepository {
+    fun getArticles(): Flow<PagingData<Article>>
+    suspend fun searchArticles(query: String): Result<List<Article>>
+    suspend fun getArticle(id: Int): Result<Article>
+    suspend fun refreshArticles()
+}
+
+// domain/usecases/GetArticlesUseCase.kt
+class GetArticlesUseCase @Inject constructor(
+    private val repository: ArticlesRepository
+) {
+    operator fun invoke(): Flow<PagingData<Article>> = repository.getArticles()
+}
+
+// domain/usecases/SearchArticlesUseCase.kt
+class SearchArticlesUseCase @Inject constructor(
+    private val repository: ArticlesRepository
+) {
+    operator fun invoke(query: String): Result<List<Article>> {
+        // Acá iría la lógica de negocio real:
+        // - Validar que el query tenga al menos 3 caracteres
+        // - Sanitizar el input (trim, lowercase)
+        // - Llamar al repositorio
+        // - Si falla, intentar con caché local
+        // - Transformar/ordenar resultados
+        return repository.searchArticles(query.trim().lowercase())
+    }
+}
+```
+
+**El `operator fun invoke()`:** Es una convención de Kotlin que permite llamar al use case como si fuera una función:
+
+```kotlin
+// Sin operator invoke
+val useCase = SearchArticlesUseCase(repository)
+useCase.execute("nasa")
+
+// Con operator invoke — más idiomático
+val useCase = SearchArticlesUseCase(repository)
+useCase("nasa")
+```
+
+**¿Cuándo agregan valor real los use cases?**
+
+| Escenario | Sin Use Case | Con Use Case |
+|---|---|---|
+| Solo delegar al repo | `repo.searchArticles(q)` en el VM | Pasamanos, no suma |
+| Validar input + delegar | Validación en el VM o repo | Lógica encapsulada en el use case |
+| Combinar 2+ repositorios | Código duplicado en varios VMs | Un solo use case reutilizado |
+| Transformar datos antes de retornar | Transform en el VM o mapper | Use case aplica la transformación |
+
+---
+
+#### 6.2.3 Capa `presentation` — "Qué ve y qué hace el usuario"
+
+**Contiene:** ViewModels, UiState, Composable screens, Navigation.
+
+**No contiene:** Lógica de negocio, acceso directo a APIs o bases de datos.
+
+**Ejemplo concreto si hubiera use cases:**
+
+```kotlin
+// presentation/viewmodels/ArticlesViewModel.kt
+@HiltViewModel
+class ArticlesViewModel @Inject constructor(
+    private val getArticles: GetArticlesUseCase,
+    private val searchArticles: SearchArticlesUseCase,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(ArticlesUiState())
+    val uiState = _uiState.asStateFlow()
+
+    init {
+        loadArticles()
+    }
+
+    fun loadArticles() {
+        viewModelScope.launch {
+            getArticles().collect { pagingData ->
+                _uiState.update { it.copy(articles = pagingData) }
+            }
+        }
+    }
+
+    fun onSearch(query: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            searchArticles(query)
+                .onSuccess { _uiState.update { it.copy(results = it, isLoading = false) } }
+                .onFailure { _uiState.update { it.copy(error = it.message, isLoading = false) } }
+        }
+    }
+}
+```
+
+```kotlin
+// presentation/ui/ArticlesScreen.kt
+@Composable
+fun ArticlesScreen(viewModel: ArticlesViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when {
+        state.isLoading -> LoadingIndicator()
+        state.error != null -> ErrorSnackbar(state.error!!)
+        else -> ArticleList(state.articles, onArticleClick = { ... })
+    }
+}
+```
+
+---
+
+### 6.3 La regla de dependencia (lo más importante)
+
+```
+  data ──conoce──→ domain ←──conoce── presentation
+   ↑                   ↑                   ↑
+   implementa      es independiente       consume
+   interfaces      de las otras dos       interfaces
+```
+
+- **domain** no tiene imports de Android, Retrofit, Room, ni Compose. Es Kotlin puro.
+- **data** implementa las interfaces que define domain. Conoce a domain.
+- **presentation** consume las interfaces de domain. Conoce a domain.
+
+El pegamento es **Hilt**, que en los módulos de `di/` le dice a data que implementación concreta usar para cada interfaz:
+
+```kotlin
+// di/RepositoryModule.kt
+@Binds abstract fun bindArticlesRepository(impl: ArticlesRepositoryImpl): ArticlesRepository
+```
+
+Y en los módulos de use cases:
+
+```kotlin
+// di/UseCasesModule.kt
+@Provides fun provideSearchArticlesUseCase(repo: ArticlesRepository) = SearchArticlesUseCase(repo)
+```
+
+---
+
+### 6.4 ¿Por qué en este proyecto no hay capa `domain` con use cases?
+
+1. **2 pantallas, 1 fuente de datos:** Lista y detalle. Una sola API REST. No hay Room, no hay SharedPreferences, no hay múltiples fuentes.
+
+2. **Los use cases serían pasamanos vacíos:**
+   ```kotlin
+   class GetArticlesUseCase(repo: ArticlesRepository) {
+       operator fun invoke() = repo.getArticles() // eso es todo
+   }
+   ```
+   Esto no agrega valor. Crea archivos, imports, y boilerplate sin lógica real.
+
+3. **El Repository Pattern es suficiente.** La interfaz `ArticlesRepository` ya desacopla el ViewModel de la fuente de datos. Con eso alcanza para testeabilidad.
+
+4. **YAGNI (You Ain't Gonna Need It).** Si el proyecto creciera (offline-first, sincronización, múltiples pantallas que comparten lógica), ahí se justificaría refactorizar.
+
+---
+
+### 6.5 ¿Cuándo SÍ se justifica Clean Architecture completa?
+
+| Señal | Acción |
+|---|---|
+| Más de una fuente de datos (API + Room) | Agregar `LocalDataSource` + mappers |
+| Lógica de negocio en el ViewModel | Extraer a use cases en `domain/` |
+| Código repetido entre ViewModels | Unificar en use cases |
+| Múltiples módulos o features | Separar por feature con su propia capa domain |
+| Proyecto con +5 pantallas | Clean Architecture desde el día 1 |
+
+---
+
+### 6.6 Si tuvieras que agregar Room y offline-first, ¿cómo lo harías?
+
+1. Creás `ArticleEntity` con anotaciones de Room en `data/datasource/local/entities/`
+2. Creás `ArticlesDao` en `data/datasource/local/dao/`
+3. Creás `AppDatabase` (Room)
+4. Creás `LocalDataSource` que wrappea el DAO
+5. Creás mappers `ArticleDto.toEntity()`, `ArticleEntity.toDomain()`
+6. Modificás el repositorio para que:
+   - Primero devuelva datos de Room (respuesta inmediata)
+   - Después pegue a la API (refresh en background)
+   - Si la API falla, ya hay datos en Room (offline)
+7. Agregás un `RefreshArticlesUseCase` en `domain/`
+8. El ViewModel no cambia. Sigue consumiendo la misma interfaz `ArticlesRepository`.
+
+**Para defender:** *"Agregar offline-first sin tocar el ViewModel ni la UI es exactamente el propósito de esta arquitectura. Las capas internas no se enteran de los cambios en las externas."*
 
 ---
 
