@@ -1,16 +1,16 @@
 package com.example.myandroidapp.ui.articles.list
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.data.ArticlesRepository
-import com.example.myandroidapp.data.DefaultArticlesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class ArticlesListUiState(
     val articles: List<Article> = emptyList(),
@@ -22,21 +22,15 @@ data class ArticlesListUiState(
     val hasMore: Boolean = true,
 )
 
-class ArticlesListViewModel(
-    savedStateHandle: SavedStateHandle = SavedStateHandle(),
+@HiltViewModel
+class ArticlesListViewModel @Inject constructor(
+    private val repository: ArticlesRepository,
 ) : ViewModel() {
-
-    private val repository: ArticlesRepository = DefaultArticlesRepository()
 
     private val _uiState = MutableStateFlow(ArticlesListUiState())
     val uiState: StateFlow<ArticlesListUiState> = _uiState.asStateFlow()
 
     init {
-        savedStateHandle.get<String>("searchQuery")?.let { query ->
-            if (query.isNotEmpty()) {
-                _uiState.update { it.copy(searchQuery = query) }
-            }
-        }
         loadArticles()
     }
 

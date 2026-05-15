@@ -1,6 +1,8 @@
 package com.example.myandroidapp.data
 
 import android.util.Log
+import javax.inject.Inject
+import javax.inject.Singleton
 
 interface ArticlesRepository {
     suspend fun getArticles(limit: Int = 20, offset: Int = 0): Result<List<Article>>
@@ -10,8 +12,9 @@ interface ArticlesRepository {
     suspend fun getArticle(id: Int): Result<Article>
 }
 
-class DefaultArticlesRepository(
-    private val apiService: ApiService = RetrofitClient.apiService,
+@Singleton
+class DefaultArticlesRepository @Inject constructor(
+    private val apiService: ApiService,
 ) : ArticlesRepository {
     override suspend fun getArticles(limit: Int, offset: Int): Result<List<Article>> =
         runCatching {

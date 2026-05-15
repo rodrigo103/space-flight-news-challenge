@@ -1,15 +1,17 @@
 package com.example.myandroidapp.ui.articles.detail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.data.ArticlesRepository
-import com.example.myandroidapp.data.DefaultArticlesRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class ArticleDetailUiState(
     val article: Article? = null,
@@ -17,11 +19,13 @@ data class ArticleDetailUiState(
     val error: String? = null,
 )
 
-class ArticleDetailViewModel(
-    private val articleId: Int,
+@HiltViewModel
+class ArticleDetailViewModel @Inject constructor(
+    private val repository: ArticlesRepository,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val repository: ArticlesRepository = DefaultArticlesRepository()
+    private val articleId: Int = checkNotNull(savedStateHandle["articleId"]) { "articleId required" }
 
     private val _uiState = MutableStateFlow(ArticleDetailUiState())
     val uiState: StateFlow<ArticleDetailUiState> = _uiState.asStateFlow()
