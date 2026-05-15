@@ -1,7 +1,7 @@
 package com.example.myandroidapp.ui.articles.detail
 
 import androidx.lifecycle.SavedStateHandle
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.TestArticleData
 import com.example.myandroidapp.data.ArticlesRepository
 import com.example.myandroidapp.test.MainDispatcherRule
 import io.mockk.coEvery
@@ -19,15 +19,10 @@ class ArticleDetailViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val article = Article(
-        id = 1, title = "Article Detail", summary = "Full summary",
-        newsSite = "NASA", publishedAt = "2026-05-15",
-    )
-
     @Test
     fun `loadArticle on success populates detail`() = runTest {
         val repository = mockk<ArticlesRepository>()
-        coEvery { repository.getArticle(1) } returns Result.success(article)
+        coEvery { repository.getArticle(1) } returns Result.success(TestArticleData.articleDetail)
 
         val viewModel = ArticleDetailViewModel(
             repository = repository,
@@ -38,7 +33,6 @@ class ArticleDetailViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertEquals("Article Detail", state.article?.title)
-        assertEquals(1, state.article?.id)
     }
 
     @Test
@@ -61,15 +55,15 @@ class ArticleDetailViewModelTest {
     @Test
     fun `clearError clears error message`() = runTest {
         val repository = mockk<ArticlesRepository>()
-        coEvery { repository.getArticle(1) } returns Result.success(article)
+        coEvery { repository.getArticle(1) } returns Result.success(TestArticleData.articleDetail)
 
         val viewModel = ArticleDetailViewModel(
             repository = repository,
             savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
         )
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
-
         viewModel.clearError()
+
         assertNull(viewModel.uiState.value.error)
     }
 

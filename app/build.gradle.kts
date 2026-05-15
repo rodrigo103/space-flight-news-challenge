@@ -103,4 +103,7 @@ dependencies {
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
   implementation(libs.hilt.navigation.compose)
+
+  // LeakCanary
+  debugImplementation(libs.leakcanary)
 }
