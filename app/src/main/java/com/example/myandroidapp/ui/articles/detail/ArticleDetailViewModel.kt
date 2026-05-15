@@ -1,6 +1,5 @@
 package com.example.myandroidapp.ui.articles.detail
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myandroidapp.data.Article
@@ -19,7 +18,7 @@ data class ArticleDetailUiState(
 )
 
 class ArticleDetailViewModel(
-    savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    private val articleId: Int,
 ) : ViewModel() {
 
     private val repository: ArticlesRepository = DefaultArticlesRepository()
@@ -27,17 +26,14 @@ class ArticleDetailViewModel(
     private val _uiState = MutableStateFlow(ArticleDetailUiState())
     val uiState: StateFlow<ArticleDetailUiState> = _uiState.asStateFlow()
 
-    private val articleId: Int? = savedStateHandle.get<Int>("articleId")
-
     init {
-        articleId?.let { loadArticle() }
+        loadArticle()
     }
 
     fun loadArticle() {
-        val id = articleId ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            repository.getArticle(id)
+            repository.getArticle(articleId)
                 .onSuccess { article ->
                     _uiState.update { it.copy(article = article, isLoading = false) }
                 }

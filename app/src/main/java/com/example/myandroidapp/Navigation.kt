@@ -20,8 +20,8 @@ fun MainNavigation() {
                     backStack.add(ArticleDetail(articleId))
                 })
             }
-            entry<ArticleDetail> {
-                ArticleDetailScreen(onBack = { backStack.removeLastOrNull() })
+            entry<ArticleDetail> { detail ->
+                ArticleDetailScreen(articleId = detail.articleId, onBack = { backStack.removeLastOrNull() })
             }
         },
     )
