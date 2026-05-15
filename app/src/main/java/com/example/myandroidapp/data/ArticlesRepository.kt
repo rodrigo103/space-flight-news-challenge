@@ -1,9 +1,9 @@
 package com.example.myandroidapp.data
 
-import android.util.Log
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 interface ArticlesRepository {
     suspend fun getArticles(limit: Int = 20, offset: Int = 0): Result<List<Article>>
@@ -22,7 +22,7 @@ class DefaultArticlesRepository @Inject constructor(
             val response = apiService.getArticles(limit = limit, offset = offset)
             extractBody(response).results
         }.onFailure {
-            Log.e(TAG, "Error fetching articles", it)
+            Timber.e(it, "Error fetching articles")
         }
 
     override suspend fun searchArticles(query: String, limit: Int): Result<List<Article>> =
@@ -31,7 +31,7 @@ class DefaultArticlesRepository @Inject constructor(
                 apiService.getArticles(limit = limit, offset = 0, search = query)
             extractBody(response).results
         }.onFailure {
-            Log.e(TAG, "Error searching articles with query: $query", it)
+            Timber.e(it, "Error searching articles with query: %s", query)
         }
 
     override suspend fun getArticle(id: Int): Result<Article> =
@@ -39,7 +39,7 @@ class DefaultArticlesRepository @Inject constructor(
             val response = apiService.getArticle(id)
             extractBody(response)
         }.onFailure {
-            Log.e(TAG, "Error fetching article with id: $id", it)
+            Timber.e(it, "Error fetching article with id: %d", id)
         }
 
     private fun <T> extractBody(response: retrofit2.Response<T>): T {
@@ -47,9 +47,5 @@ class DefaultArticlesRepository @Inject constructor(
             return response.body()!!
         }
         throw IOException("HTTP ${response.code()} ${response.message()}")
-    }
-
-    companion object {
-        private const val TAG = "ArticlesRepository"
     }
 }

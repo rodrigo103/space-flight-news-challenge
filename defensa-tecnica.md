@@ -86,6 +86,24 @@ navigation3 es experimental y no está listo para producción. Tuve problemas co
 - *"En debug, el interceptor de OkHttp loguea bodies completos. En release, solo loguea headers para no exponer datos."*
 - *"LeakCanary detecta memory leaks automáticamente en debug builds."*
 
+### Timber vs android.util.Log
+
+| Aspecto | `android.util.Log` | Timber |
+|---|---|---|
+| Tag automático | No, hay que definirlo manualmente | Sí, lo extrae del nombre de la clase automáticamente |
+| Logs en release | Quedan si no los borrás manualmente | Solo se planta `DebugTree` en debug, release limpio |
+| Excepciones | `Log.e(TAG, msg, tr)` el tag va primero | `Timber.e(tr, msg)` la excepción va primero, más natural |
+| Formato | Solo concatenación de strings | Formato type-safe con `%s`, `%d`, etc. |
+| Extensibilidad | No tiene | Podés crear Trees custom para Crashlytics, archivo, red |
+| Crashlytics nativo | `FirebaseCrashlytics.log()` aparte | `Timber.plant(CrashlyticsTree())` en 1 línea |
+| Autor | SDK de Android | Jake Wharton (Square, Dagger, Retrofit, OkHttp) |
+| Adopción | SDK estándar | De facto en apps Android profesionales |
+
+- *"Timber es un wrapper minimalista sobre `android.util.Log` resuelve problemas concretos: el tag automático elimina código repetitivo, y al plantarlo solo en debug te asegurás de no loguear datos en producción."*
+- *"`Timber.e(throwable, format)` acepta la excepción como primer parámetro, lo que hace más difícil olvidar loguearla. Con `Log.e(TAG, msg, tr)` es fácil pasar el `Throwable` en otra posición y perder la traza."*
+- *"La extensibilidad de Timber permite agregar árboles custom sin cambiar el código de logueo. Si más adelante quisiera integrar Firebase Crashlytics, alcanza con agregar `Timber.plant(CrashlyticsTree())` en el Application. Los `Timber.e()` existentes ya funcionan."*
+- *"En este proyecto, reemplacé 3 `Log.e(TAG, ...)` en el Repository por `Timber.e(...)`. El tag se infiere solo, y la integración con el `isDebug` flag de Hilt garantiza que no haya logging en release."*
+
 ---
 
 ## 5. Testing
