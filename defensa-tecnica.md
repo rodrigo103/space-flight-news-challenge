@@ -573,6 +573,31 @@ object DispatcherModule {
 - Sabés que un repository testeable necesita que el dispatcher sea inyectable
 - Conocés `@Qualifier` de Dagger/Hilt y cómo crear anotaciones custom
 
+### SplashScreen API vs Lottie para animaciones de carga
+
+**No compiten, se complementan.** Resuelven problemas distintos.
+
+| Aspecto | SplashScreen API | Lottie |
+|---|---|---|
+| Quién | Google (parte del OS desde Android 12) | Airbnb (librería externa) |
+| Cuándo | Antes de que tu Activity exista (cold start) | Dentro de la app, en cualquier momento |
+| Qué muestra | Icono de la app + color de fondo (solo eso) | Animaciones After Effects complejas |
+| Personalización | Mínima (color de fondo, icono) | Total (cualquier animación JSON) |
+| Animación | Fade-out del icono al entrar a la app | Loops, morphing, interactivas |
+
+**Para defender:** *"Usé la SplashScreen API de Android porque es la solución oficial del sistema operativo. Mientras la app carga, el sistema ya muestra el icono en el color que definí. No hay stutter ni flash blanco. Lottie no podría hacer esto porque la app ni siquiera existe cuando la SplashScreen aparece."*
+
+*"Lottie lo usé para reemplazar el `CircularProgressIndicator` del loading de artículos y detalle. Una animación temática de Space Flight News (cohete/espacio) se ve mucho más profesional que un spinner gris. El evaluador lo nota al toque."*
+
+**¿Por qué no Lottie en la splash?** *"Lottie aparece cuando la app ya inició. Si intentara usarlo como splash, habría un delay entre que el sistema muestra el icono y Lottie se renderiza. La SplashScreen API resuelve exactamente ese problema."*
+
+**¿Por qué no la SplashScreen API para reemplazar el loading?** *"La SplashScreen API solo se muestra una vez al abrir la app. Si el usuario navega a detalle, no puede usarse. Ahí entra Lottie."*
+
+**La combinación ideal:**
+1. Sistema: SplashScreen API → icono desde que tocás el app hasta que Compose renderiza
+2. App: Lottie → animaciones temáticas mientras cargan datos
+3. No hay 3.
+
 ---
 
 ## 8. Si pudieras volver a empezar, ¿qué harías diferente?
