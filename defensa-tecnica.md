@@ -531,6 +531,20 @@ Y en los módulos de use cases:
 ### Paging
 - *"No implementé Paging3 porque el endpoint de Space Flight News devuelve listas paginadas con `offset`/`limit`. Para 2 pantallas, la paginación manual con `LazyColumn` + `derivedStateOf` es suficiente."*
 
+### buildSrc vs Version Catalog (TOML)
+
+| Aspecto | TOML (lo que uso) | buildSrc |
+|---|---|---|
+| Sintaxis | Declarativo (`module = "..."`) | Kotlin (`implementation(Dependencies.retrofit)`) |
+| IDE support | Autocompletado parcial | Autocompletado, go-to-definition, refactoring |
+| Error detection | En runtime (al resolver) | En compilación |
+| Velocidad de sync | Instantáneo | buildSrc compila primero (+3s por sync) |
+| Custom logic | No soporta | Funciones helper, extensiones, lo que quieras |
+| Recomendación oficial | **Sí**, Google recomienda version catalogs desde Gradle 7.0 | Era el estándar antes de version catalogs |
+| Escalabilidad | Bien hasta ~30 deps en 1 módulo | Mejor con +50 deps y múltiples módulos |
+
+**Para defender:** *"Usé TOML version catalog porque es la recomendación oficial de Gradle desde la 7.0. buildSrc era el estándar antes de que existieran los version catalogs y tiene ventajas como type-safety y custom logic, pero para un proyecto de 1 módulo con ~20 dependencias, TOML es más simple, más rápido y es lo que Google recomienda hoy."*
+
 ---
 
 ## 8. Si pudieras volver a empezar, ¿qué harías diferente?
@@ -539,4 +553,4 @@ Buena pregunta para el final. Respuesta honesta:
 
 1. *"No habría usado navigation3. Perdí tiempo debugueando problemas de una librería experimental."*
 2. *"Agregaría tests de integración con MockWebServer para la capa HTTP. Los tests unitarios de ViewModels están bien, pero un test que verifique que el parseo de la API funciona da más seguridad."*
-3. *"Tal vez usaría buildSrc para las versiones de dependencias en vez del version catalog TOML, pero es cuestión de preferencia."*
+3. *"En cuanto a buildSrc vs TOML, me quedo con TOML: es el approach moderno y recomendado. buildSrc lo conozco pero no suma nada acá (ver sección 7.5)."*
