@@ -54,6 +54,14 @@ class ArticlesListViewModel @Inject constructor(
     private val _events = MutableSharedFlow<ArticlesListEvent>()
     val events: SharedFlow<ArticlesListEvent> = _events.asSharedFlow()
 
+    private val _selectedArticleId = MutableStateFlow<Int?>(null)
+    val selectedArticleId: StateFlow<Int?> = _selectedArticleId.asStateFlow()
+
+    fun onArticleSelected(id: Int) {
+        _selectedArticleId.value = id
+        analytics.logEvent("article_selected", mapOf("id" to id.toString()))
+    }
+
     init {
         analytics.logScreenView("ArticlesList")
         loadArticles()
