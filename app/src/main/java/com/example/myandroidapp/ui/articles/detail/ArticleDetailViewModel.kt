@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.data.ArticlesRepository
 import com.example.myandroidapp.ui.UiState
+import com.example.myandroidapp.analytics.AnalyticsHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ data class ArticleDetailState(
 @HiltViewModel
 class ArticleDetailViewModel @Inject constructor(
     private val repository: ArticlesRepository,
+    private val analytics: AnalyticsHelper,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -31,6 +33,7 @@ class ArticleDetailViewModel @Inject constructor(
     val uiState: StateFlow<UiState<ArticleDetailState>> = _uiState.asStateFlow()
 
     init {
+        analytics.logScreenView("ArticleDetail_$articleId")
         loadArticle()
     }
 
@@ -50,9 +53,11 @@ class ArticleDetailViewModel @Inject constructor(
             }
             result
                 .onSuccess { article ->
+                    analytics.logEvent("article_loaded", mapOf("id" to article.id.toString()))
                     _uiState.value = UiState.Success(ArticleDetailState(article = article))
                 }
                 .onFailure { e ->
+                    analytics.logError(e, "loadArticle_$articleId")
                     _uiState.value = UiState.Error(e.message ?: "Unknown error")
                 }
         }

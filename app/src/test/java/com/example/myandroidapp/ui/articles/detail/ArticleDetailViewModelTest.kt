@@ -2,6 +2,7 @@ package com.example.myandroidapp.ui.articles.detail
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.myandroidapp.TestArticleData
+import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.data.ArticlesRepository
 import com.example.myandroidapp.test.MainDispatcherRule
 import com.example.myandroidapp.ui.UiState
@@ -19,6 +20,8 @@ class ArticleDetailViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private val analytics = mockk<AnalyticsHelper>(relaxed = true)
+
     @Test
     fun `loadArticle on success populates detail`() = runTest {
         val repository = mockk<ArticlesRepository>()
@@ -26,6 +29,7 @@ class ArticleDetailViewModelTest {
 
         val viewModel = ArticleDetailViewModel(
             repository = repository,
+            analytics = analytics,
             savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
         )
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
@@ -43,6 +47,7 @@ class ArticleDetailViewModelTest {
 
         val viewModel = ArticleDetailViewModel(
             repository = repository,
+            analytics = analytics,
             savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
         )
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
@@ -59,6 +64,7 @@ class ArticleDetailViewModelTest {
         val exception = assertThrows(IllegalStateException::class.java) {
             ArticleDetailViewModel(
                 repository = repository,
+                analytics = analytics,
                 savedStateHandle = SavedStateHandle(),
             )
         }

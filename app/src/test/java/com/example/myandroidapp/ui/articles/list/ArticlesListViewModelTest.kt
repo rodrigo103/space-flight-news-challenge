@@ -2,6 +2,7 @@ package com.example.myandroidapp.ui.articles.list
 
 import app.cash.turbine.test
 import com.example.myandroidapp.TestArticleData
+import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.data.ArticlesRepository
 import com.example.myandroidapp.test.MainDispatcherRule
 import com.example.myandroidapp.ui.UiState
@@ -18,6 +19,8 @@ class ArticlesListViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private val analytics = mockk<AnalyticsHelper>(relaxed = true)
+
     @Test
     fun `loadArticles on success populates list and stops loading`() = runTest {
         val repository = mockk<ArticlesRepository>()
@@ -25,7 +28,7 @@ class ArticlesListViewModelTest {
             listOf(TestArticleData.article1, TestArticleData.article2)
         )
 
-        val viewModel = ArticlesListViewModel(repository)
+        val viewModel = ArticlesListViewModel(repository, analytics)
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -42,7 +45,7 @@ class ArticlesListViewModelTest {
             Exception("Network error")
         )
 
-        val viewModel = ArticlesListViewModel(repository)
+        val viewModel = ArticlesListViewModel(repository, analytics)
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -60,7 +63,7 @@ class ArticlesListViewModelTest {
             listOf(TestArticleData.article2)
         )
 
-        val viewModel = ArticlesListViewModel(repository)
+        val viewModel = ArticlesListViewModel(repository, analytics)
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
         var data = (viewModel.uiState.value as UiState.Success).data
         assertEquals(1, data.articles.size)
@@ -82,7 +85,7 @@ class ArticlesListViewModelTest {
             listOf(TestArticleData.article1)
         )
 
-        val viewModel = ArticlesListViewModel(repository)
+        val viewModel = ArticlesListViewModel(repository, analytics)
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
         var data = (viewModel.uiState.value as UiState.Success).data
         assertEquals(2, data.articles.size)
@@ -102,7 +105,7 @@ class ArticlesListViewModelTest {
             Exception("Search failed")
         )
 
-        val viewModel = ArticlesListViewModel(repository)
+        val viewModel = ArticlesListViewModel(repository, analytics)
         viewModel.events.test {
             viewModel.searchArticles("nasa")
             mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
@@ -119,7 +122,7 @@ class ArticlesListViewModelTest {
         val repository = mockk<ArticlesRepository>()
         coEvery { repository.getArticles(offset = 0) } returns Result.success(emptyList())
 
-        val viewModel = ArticlesListViewModel(repository)
+        val viewModel = ArticlesListViewModel(repository, analytics)
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onSearchQueryChanged("nasa")
@@ -137,7 +140,7 @@ class ArticlesListViewModelTest {
             listOf(TestArticleData.article1)
         )
 
-        val viewModel = ArticlesListViewModel(repository)
+        val viewModel = ArticlesListViewModel(repository, analytics)
         mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
         var data = (viewModel.uiState.value as UiState.Success).data
         assertEquals(1, data.articles.size)

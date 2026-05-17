@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.data.ArticlesRepository
 import com.example.myandroidapp.ui.UiState
+import com.example.myandroidapp.analytics.AnalyticsHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,7 @@ data class ArticlesListActions(
 @HiltViewModel
 class ArticlesListViewModel @Inject constructor(
     private val repository: ArticlesRepository,
+    private val analytics: AnalyticsHelper,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<ArticlesListState>>(UiState.Loading)
@@ -51,6 +53,7 @@ class ArticlesListViewModel @Inject constructor(
     val events: SharedFlow<ArticlesListEvent> = _events.asSharedFlow()
 
     init {
+        analytics.logScreenView("ArticlesList")
         loadArticles()
     }
 
@@ -93,9 +96,11 @@ class ArticlesListViewModel @Inject constructor(
                             hasMore = articles.size == PAGE_SIZE,
                         )
                     }
+                    analytics.logEvent("articles_loaded", mapOf("count" to articles.size.toString()))
                     _uiState.value = UiState.Success(merged)
                 }
                 .onFailure { e ->
+                    analytics.logError(e, "loadArticles")
                     val existing = (_uiState.value as? UiState.Success)?.data
                     if (existing != null) {
                         _uiState.value = UiState.Success(existing.copy(isLoadingMore = false))
@@ -127,6 +132,7 @@ class ArticlesListViewModel @Inject constructor(
             }
             result
                 .onSuccess { articles ->
+                    analytics.logEvent("search_completed", mapOf("query" to query, "count" to articles.size.toString()))
                     _uiState.value = UiState.Success(
                         current.copy(
                             articles = articles,
