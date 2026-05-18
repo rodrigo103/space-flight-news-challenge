@@ -12,8 +12,7 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 
 ## Processes
 
-- [[processes/build-and-test]] — Cómo compilar, testear, ejecutar
-- [[processes/pr-workflow]] — Flujo de PRs, commits, review
+- [[processes/build-and-test]] — Cómo compilar y testear
 
 ## Patterns
 
