@@ -1,7 +1,6 @@
 package com.example.myandroidapp.ui.articles.detail
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +38,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.myandroidapp.R
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.ui.UiState
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -154,7 +154,7 @@ internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifie
         article.publishedAt?.let {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Published: ${it.take(10)}",
+                text = "Published: ${it.take(DATE_LENGTH)}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -170,7 +170,7 @@ internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifie
         if (article.url.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             IconButton(onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.url))
+                val intent = Intent(Intent.ACTION_VIEW, article.url.toUri())
                 context.startActivity(intent)
             }) {
                 Icon(Icons.Default.OpenInBrowser, contentDescription = "Open in browser")
@@ -178,3 +178,5 @@ internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifie
         }
     }
 }
+
+private const val DATE_LENGTH = 10

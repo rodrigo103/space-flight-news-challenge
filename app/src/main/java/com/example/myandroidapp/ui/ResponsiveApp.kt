@@ -6,9 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myandroidapp.MainNavigation
-import com.example.myandroidapp.data.ArticlesRepository
 import dagger.hilt.android.EntryPointAccessors
 
 @Composable

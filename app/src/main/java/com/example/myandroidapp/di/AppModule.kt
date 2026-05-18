@@ -14,6 +14,6 @@ object AppModule {
 
     @Provides @Named("isDebug")
     fun provideIsDebug(app: Application): Boolean {
-        return (app.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        return app.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
 }

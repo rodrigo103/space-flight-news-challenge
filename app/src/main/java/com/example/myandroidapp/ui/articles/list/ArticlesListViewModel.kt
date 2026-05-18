@@ -7,7 +7,6 @@ import androidx.paging.cachedIn
 import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.data.ArticlesRepository
-import com.example.myandroidapp.data.preferences.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -23,7 +22,6 @@ import javax.inject.Inject
 class ArticlesListViewModel @Inject constructor(
     private val repository: ArticlesRepository,
     private val analytics: AnalyticsHelper,
-    private val preferences: AppPreferences,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
