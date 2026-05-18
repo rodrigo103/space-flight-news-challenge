@@ -10,8 +10,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun ArticlesListScreenRoute(
     onArticleClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: ArticlesListViewModel = hiltViewModel(),
 ) {
-    val viewModel: ArticlesListViewModel = hiltViewModel()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
     ArticlesListScreen(

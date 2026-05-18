@@ -10,8 +10,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun ArticleDetailScreenRoute(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: ArticleDetailViewModel = hiltViewModel(),
 ) {
-    val viewModel: ArticleDetailViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     ArticleDetailScreen(
