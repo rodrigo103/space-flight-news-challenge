@@ -4,6 +4,7 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.hilt)
   alias(libs.plugins.ksp)
+  alias(libs.plugins.detekt)
 }
 
 android {
@@ -43,6 +44,12 @@ android {
 
 kotlin {
     jvmToolchain(17)
+}
+
+detekt {
+  config = files("../config/detekt/detekt.yml")
+  buildUponDefaultConfig = true
+  allRules = false
 }
 
 dependencies {
@@ -131,4 +138,7 @@ dependencies {
   implementation(libs.paging.runtime)
   implementation(libs.paging.compose)
   implementation(libs.paging.common)
+
+  // Detekt Compose rules
+  detektPlugins("io.nlopez.compose.rules:detekt:${libs.versions.detektComposeRules.get()}")
 }
