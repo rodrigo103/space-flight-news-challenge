@@ -28,8 +28,6 @@ class FirebaseAnalyticsHelper @Inject constructor(
     }
 
     override fun logScreenView(screenName: String) {
-        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW) {
-            param(FirebaseAnalytics.Param.SCREEN_NAME, screenName)
-        }
+        // Firebase auto-tracks screen views via Compose / Activity lifecycle
     }
 }
