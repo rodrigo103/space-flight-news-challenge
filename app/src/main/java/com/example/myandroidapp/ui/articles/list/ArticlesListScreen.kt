@@ -1,6 +1,7 @@
 package com.example.myandroidapp.ui.articles.list
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -188,7 +190,7 @@ internal fun ArticleCard(article: Article, onClick: () -> Unit, modifier: Modifi
             AsyncImage(
                 model = article.imageUrl,
                 contentDescription = article.title,
-                modifier = Modifier.size(80.dp),
+                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop,
             )
             Spacer(modifier = Modifier.width(12.dp))
