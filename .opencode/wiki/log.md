@@ -4,3 +4,4 @@
 
 - Setup inicial del wiki
 - Seed pages creadas para architecture, processes, patterns, tools
+- Added [[patterns/attributes-actions]] — Attributes/Actions pattern + previews + analytics en Actions

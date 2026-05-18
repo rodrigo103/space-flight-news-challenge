@@ -20,9 +20,14 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 - [[patterns/mvvm-repository]] — MVVM + Repository pattern
 - [[patterns/error-handling]] — Manejo de errores con Result + UiState
 - [[patterns/room-paging]] — Room + Paging 3 + RemoteMediator
+- [[patterns/attributes-actions]] — Attributes/Actions pattern (Ualá) + previews
 
 ## Tools
 
 - [[tools/retrofit-setup]] — Retrofit + OkHttp + kotlinx.serialization
 - [[tools/hilt-setup]] — Hilt DI + módulos
 - [[tools/key-dependencies]] — Resumen de dependencias clave
+
+## Meta
+
+- [[log]] — Changelog del wiki
