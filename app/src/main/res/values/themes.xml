@@ -3,8 +3,7 @@
 
     <style name="Theme.MyAndroidApp" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <style name="Theme.SplashScreen" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
+    <style name="Theme.MyAndroidApp.Splash" parent="Theme.SplashScreen">
         <item name="postSplashScreenTheme">@style/Theme.MyAndroidApp</item>
     </style>
 </resources>
