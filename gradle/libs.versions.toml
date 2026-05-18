@@ -29,7 +29,7 @@ room = "2.7.1"
 paging = "3.3.5"
 detekt = "1.23.8"
 detektComposeRules = "0.4.2"
-sonarcloud = "5.1.0.4882"
+sonarcloud = "7.3.0.8198"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
