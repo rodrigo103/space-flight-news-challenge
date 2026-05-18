@@ -111,4 +111,35 @@ class ArticlesRepositoryTest {
         assertEquals(1, result.getOrThrow().size)
         assertEquals("Article 1", result.getOrThrow()[0].title)
     }
+
+    @Test
+    fun `getArticles with custom limit and offset`() = runTest {
+        serverRule.enqueueJson(200, TestJson.ARTICLE_RESPONSE)
+
+        createRepository().getArticles(limit = 10, offset = 5)
+
+        val request = serverRule.server.takeRequest()
+        assertEquals("10", request.requestUrl?.queryParameter("limit"))
+        assertEquals("5", request.requestUrl?.queryParameter("offset"))
+    }
+
+    @Test
+    fun `searchArticles on 500 returns failure`() = runTest {
+        serverRule.enqueueJson(500, """{"error":"Server error"}""")
+
+        val result = createRepository().searchArticles("test")
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is ApiException.ServerError)
+    }
+
+    @Test
+    fun `searchArticles with empty results returns empty list`() = runTest {
+        serverRule.enqueueJson(200, TestJson.EMPTY_RESPONSE)
+
+        val result = createRepository().searchArticles("nonexistent")
+
+        assertTrue(result.isSuccess)
+        assertEquals(0, result.getOrThrow().size)
+    }
 }
