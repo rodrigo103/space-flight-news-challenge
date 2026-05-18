@@ -221,7 +221,7 @@ internal fun ArticleCard(article: Article, onClick: () -> Unit, modifier: Modifi
                     Spacer(modifier = Modifier.width(8.dp))
                     article.publishedAt?.let {
                         Text(
-                            text = it.take(10),
+                            text = it.take(DATE_LENGTH),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -231,3 +231,5 @@ internal fun ArticleCard(article: Article, onClick: () -> Unit, modifier: Modifi
         }
     }
 }
+
+private const val DATE_LENGTH = 10
