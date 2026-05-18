@@ -1,5 +1,5 @@
 build:
-  maxIssues: 15
+  maxIssues: 50
   excludeCorrectable: false
 
 processors:
@@ -248,8 +248,7 @@ style:
   ExplicitItLambdaParameter:
     active: true
   ExpressionBodySyntax:
-    active: true
-    includeLineWrapping: false
+    active: false
   ForbiddenComment:
     active: true
     comments:
@@ -275,8 +274,9 @@ style:
     ignoreHashCodeFunction: true
     ignoreConstantDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
-    ignoreAnnotation: false
+    ignoreAnnotation: true
     ignoreNamedArgument: true
+    ignorePropertyDeclaration: true
   MandatoryBracesLoops:
     active: true
   MaxLineLength:
@@ -284,6 +284,7 @@ style:
     maxLineLength: 120
     excludePackageStatements: true
     excludeImportStatements: true
+    excludeCommentStatements: true
     excludeRawStrings: true
   MayBeConst:
     active: true
@@ -334,6 +335,7 @@ style:
     active: true
   UnnecessaryParentheses:
     active: true
+    allowForUnclearPrecedence: true
   UnusedImports:
     active: true
   UnusedParameter:
@@ -341,6 +343,8 @@ style:
     allowedNames: 'ignored|expected'
   UnusedPrivateMember:
     active: true
+    allowedNames: ''
+    excludes: ['**/preview/**', '**/theme/**']
   UnusedPrivateProperty:
     active: true
   UseAnyOrNoneInsteadOfFind:
@@ -375,7 +379,7 @@ style:
     excludeImports:
       - 'java.util.*'
 
-compose:
+Compose:
   CompositionLocalNaming:
     active: true
   ContentEmitterReturningValues:

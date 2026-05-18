@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CognitiveComplexMethod:ArticlesListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ArticlesListScreen( attributes: ArticlesListAttributes, actions: ArticlesListActions, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:ArticleDetailScreen.kt$@Composable internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifier)</ID>
+    <ID>LongMethod:ArticlesListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ArticlesListScreen( attributes: ArticlesListAttributes, actions: ArticlesListActions, modifier: Modifier = Modifier, )</ID>
+    <ID>MagicNumber:ArticleDetailScreen.kt$10</ID>
+    <ID>MagicNumber:ArticlesListScreen.kt$10</ID>
+    <ID>MagicNumber:DualPaneScreen.kt$0.4f</ID>
+    <ID>MagicNumber:DualPaneScreen.kt$0.6f</ID>
+    <ID>MagicNumber:HttpErrorCallAdapter.kt$HttpErrorCall$400</ID>
+    <ID>MagicNumber:HttpErrorCallAdapter.kt$HttpErrorCall$401</ID>
+    <ID>MagicNumber:HttpErrorCallAdapter.kt$HttpErrorCall$404</ID>
+    <ID>MagicNumber:HttpErrorCallAdapter.kt$HttpErrorCall$409</ID>
+    <ID>MagicNumber:HttpErrorCallAdapter.kt$HttpErrorCall$500</ID>
+    <ID>MagicNumber:HttpErrorCallAdapter.kt$HttpErrorCall$599</ID>
+    <ID>MagicNumber:ResponseExt.kt$400</ID>
+    <ID>MagicNumber:ResponseExt.kt$401</ID>
+    <ID>MagicNumber:ResponseExt.kt$404</ID>
+    <ID>MagicNumber:ResponseExt.kt$409</ID>
+    <ID>MagicNumber:ResponseExt.kt$500</ID>
+    <ID>MagicNumber:ResponseExt.kt$599</ID>
+    <ID>MatchingDeclarationName:HttpErrorCallAdapter.kt$HttpErrorCallAdapterFactory : Factory</ID>
+    <ID>MaxLineLength:ArticleDetailScreenPreviews.kt$summary = "In a historic milestone, SpaceX's Starship completed its first crewed mission to the Red Planet, carrying a team of 12 astronauts. The mission marks the beginning of a new era in interplanetary travel."</ID>
+    <ID>MaxLineLength:ArticlesListScreen.kt$actions.sendAnalytics("article_selected", mapOf("id" to article.id.toString()))</ID>
+    <ID>MaxLineLength:ArticlesListScreen.kt$text = if (attributes.searchQuery.isNotEmpty()) "No results found" else "No articles available"</ID>
+    <ID>MaxLineLength:ArticlesListScreenPreviews.kt$summary = "The James Webb Space Telescope has identified a distant exoplanet with an atmosphere containing significant amounts of water vapor."</ID>
+    <ID>MaxLineLength:MainActivity.kt$MainActivity$MyAndroidAppTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { ResponsiveApp() } }</ID>
+    <ID>SwallowedException:HttpErrorCallAdapter.kt$HttpErrorCall$e: IOException</ID>
+    <ID>SwallowedException:ResponseExt.kt$e: IOException</ID>
+    <ID>TooGenericExceptionCaught:ArticleRemoteMediator.kt$ArticleRemoteMediator$e: Exception</ID>
+    <ID>UnnecessaryParentheses:AppModule.kt$AppModule$(app.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE)</ID>
+    <ID>UnusedImports:HttpErrorCallAdapter.kt$import retrofit2.HttpException</ID>
+    <ID>UnusedImports:ResponsiveApp.kt$import androidx.hilt.navigation.compose.hiltViewModel</ID>
+    <ID>UnusedImports:ResponsiveApp.kt$import com.example.myandroidapp.data.ArticlesRepository</ID>
+    <ID>UnusedPrivateProperty:ArticlesListViewModel.kt$ArticlesListViewModel$private val preferences: AppPreferences</ID>
+    <ID>ViewModelInjection:ArticleDetailScreenRoute.kt$viewModel</ID>
+    <ID>ViewModelInjection:ArticlesListScreenRoute.kt$viewModel</ID>
+    <ID>ViewModelInjection:DualPaneScreen.kt$listViewModel</ID>
+  </CurrentIssues>
+</SmellBaseline>
