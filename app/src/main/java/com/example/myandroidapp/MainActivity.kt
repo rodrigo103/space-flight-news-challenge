@@ -19,6 +19,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
+        enableEdgeToEdge()
         setContent {
             MyAndroidAppTheme {
                 Surface(
