@@ -75,9 +75,8 @@ fun ArticlesListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        val refreshState = articles.loadState.refresh
-        when {
-            refreshState is LoadState.Loading -> {
+        when (val refreshState = articles.loadState.refresh) {
+            is LoadState.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -93,7 +92,7 @@ fun ArticlesListScreen(
                 }
             }
 
-            refreshState is LoadState.Error -> {
+            is LoadState.Error -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
