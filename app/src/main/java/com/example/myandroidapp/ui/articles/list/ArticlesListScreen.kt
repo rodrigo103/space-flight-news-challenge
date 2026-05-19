@@ -99,79 +99,81 @@ fun ArticlesListScreen(
             bottomColor = MaterialTheme.colorScheme.inverseOnSurface,
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
-            when (val refreshState = articles.loadState.refresh) {
-                is LoadState.Loading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.space_loading))
-                        LottieAnimation(
-                            composition = composition,
-                            modifier = Modifier.size(160.dp),
-                            iterations = LottieConstants.IterateForever,
+            Column(modifier = Modifier.padding(padding)) {
+                OutlinedTextField(
+                    value = attributes.searchQuery,
+                    onValueChange = actions.onSearchTextChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("Search articles...") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    }
-                }
+                    },
+                    trailingIcon = {
+                        if (attributes.searchQuery.isNotEmpty()) {
+                            IconButton(onClick = actions.onClearSearch) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear search",
+                                )
+                            }
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
+                )
 
-                is LoadState.Error -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            text = refreshState.error.message ?: "Unknown error",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.material3.Button(
-                            onClick = { articles.retry() }
+                when (val refreshState = articles.loadState.refresh) {
+                    is LoadState.Loading -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Text("Retry")
+                            val composition by rememberLottieComposition(
+                                LottieCompositionSpec.RawRes(
+                                    R.raw.space_loading
+                                )
+                            )
+                            LottieAnimation(
+                                composition = composition,
+                                modifier = Modifier.size(160.dp),
+                                iterations = LottieConstants.IterateForever,
+                            )
                         }
                     }
-                }
 
-                else -> {
-                    Column(modifier = Modifier.padding(padding)) {
-                        OutlinedTextField(
-                            value = attributes.searchQuery,
-                            onValueChange = actions.onSearchTextChange,
+                    is LoadState.Error -> {
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            placeholder = { Text("Search articles...") },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = "Search",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            },
-                            trailingIcon = {
-                                if (attributes.searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = actions.onClearSearch) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = "Clear search",
-                                        )
-                                    }
-                                }
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            ),
-                        )
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Text(
+                                text = refreshState.error.message ?: "Unknown error",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            androidx.compose.material3.Button(
+                                onClick = { articles.retry() }
+                            ) {
+                                Text("Retry")
+                            }
+                        }
+                    }
 
+                    else -> {
                         if (articles.itemCount == 0 && articles.loadState.refresh is LoadState.NotLoading) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -198,7 +200,10 @@ fun ArticlesListScreen(
                                         articleCardSettings(
                                             article = article,
                                             onClick = {
-                                                actions.sendAnalytics("article_selected", mapOf("id" to article.id.toString()))
+                                                actions.sendAnalytics(
+                                                    "article_selected",
+                                                    mapOf("id" to article.id.toString())
+                                                )
                                                 actions.onArticleClick(article.id)
                                             },
                                         )()
@@ -263,7 +268,9 @@ internal fun ArticleCard(article: Article, onClick: () -> Unit, modifier: Modifi
             AsyncImage(
                 model = article.imageUrl,
                 contentDescription = article.title,
-                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)),
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop,
             )
             Spacer(modifier = Modifier.width(12.dp))
