@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.paging.PagingData
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.ui.articles.list.ArticleCard
 import com.example.myandroidapp.ui.articles.list.ArticlesListActions
@@ -57,50 +56,6 @@ private val dummyActions = ArticlesListActions(
     onArticleClick = {},
     sendAnalytics = { _, _ -> },
 )
-
-// --- States ---
-
-@Preview(showBackground = true)
-@Composable
-private fun ArticlesListScreenWithDataPreview() {
-    MaterialTheme {
-        ArticlesListScreen(
-            attributes = ArticlesListAttributes(
-                searchQuery = "",
-                articles = flow { emit(PagingData.from(sampleArticles)) },
-            ),
-            actions = dummyActions,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ArticlesListScreenEmptyPreview() {
-    MaterialTheme {
-        ArticlesListScreen(
-            attributes = ArticlesListAttributes(
-                searchQuery = "",
-                articles = flow { emit(PagingData.empty()) },
-            ),
-            actions = dummyActions,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ArticlesListScreenSearchPreview() {
-    MaterialTheme {
-        ArticlesListScreen(
-            attributes = ArticlesListAttributes(
-                searchQuery = "mars",
-                articles = flow { emit(PagingData.from(sampleArticles.take(1))) },
-            ),
-            actions = dummyActions,
-        )
-    }
-}
 
 @Preview(showBackground = true)
 @Composable

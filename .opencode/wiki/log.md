@@ -1,5 +1,9 @@
 # Changelog del Wiki
 
+## 2026-05-19 (4)
+
+- Updated [[patterns/attributes-actions]] — Documentada limitación de Paging 3 en Compose Preview (`AndroidUiDispatcher.Main`), removidos previews de datos/vacío/búsqueda que no funcionaban, actualizado conteo a 3 previews (loading + cards).
+
 ## 2026-05-19 (3)
 
 - Updated [[processes/build-and-test]] — SonarCloud movido de "CI avanzado (a futuro)" a sección propia con descripción del workflow real

@@ -135,20 +135,22 @@ Los previews viven en `ui/preview/` y cubren todos los estados de cada pantalla:
 
 | Pantalla | Estados |
 |----------|---------|
-| ArticlesListScreen | con datos, vacío, búsqueda, loading, card light/dark |
+| ArticlesListScreen | loading, card light/dark |
 | ArticleDetailScreen | loading, éxito, error |
 
-Ejemplo:
+> **Nota:** Solo se puede previewar el estado de loading de `ArticlesListScreen` porque `collectAsLazyPagingItems()` requiere `AndroidUiDispatcher.Main` (un Looper real) que no está disponible en Compose Preview. Los datos vía `PagingData.from()` no se colectan en previews.
+
+Ejemplo de preview funcional (loading):
 
 ```kotlin
 @Preview(showBackground = true)
 @Composable
-fun ArticlesListScreenWithDataPreview() {
+private fun ArticlesListScreenLoadingPreview() {
     MaterialTheme {
         ArticlesListScreen(
             attributes = ArticlesListAttributes(
                 searchQuery = "",
-                articles = flow { emit(PagingData.from(sampleArticles)) },
+                articles = flow { },
             ),
             actions = ArticlesListActions(
                 onSearchTextChange = {},
@@ -171,7 +173,7 @@ fun ArticlesListScreenWithDataPreview() {
 | `ui/articles/detail/ArticleDetailScreenState.kt` | Attributes + Actions |
 | `ui/articles/detail/ArticleDetailScreen.kt` | Screen pura |
 | `ui/articles/detail/ArticleDetailScreenRoute.kt` | Connector con ViewModel |
-| `ui/preview/ArticlesListScreenPreviews.kt` | 6 previews (list + cards) |
+| `ui/preview/ArticlesListScreenPreviews.kt` | 3 previews (loading + cards) |
 | `ui/preview/ArticleDetailScreenPreviews.kt` | 3 previews (detail) |
 
 ## Ver también
