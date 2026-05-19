@@ -6,13 +6,13 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import retrofit2.HttpException
+import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 class ApiServiceTest {
 
@@ -36,57 +36,59 @@ class ApiServiceTest {
 
         val response = createApi().getArticles()
 
-        assertTrue(response.isSuccessful)
-        val body = response.body()!!
-        assertEquals(2, body.count)
-        assertEquals(2, body.results.size)
-        assertEquals("Article 1", body.results[0].title)
-        assertEquals("NASA", body.results[0].newsSite)
-        assertEquals("Article 2", body.results[1].title)
-        assertEquals("SpaceX", body.results[1].newsSite)
+        assertEquals(2, response.count)
+        assertEquals(2, response.results.size)
+        assertEquals("Article 1", response.results[0].title)
+        assertEquals("NASA", response.results[0].newsSite)
+        assertEquals("Article 2", response.results[1].title)
+        assertEquals("SpaceX", response.results[1].newsSite)
     }
 
     @Test
-    fun `getArticles returns failure on 500`() = runTest {
+    fun `getArticles throws on 500`() = runTest {
         serverRule.enqueueJson(500, """{"error":"Internal error"}""")
 
-        val response = createApi().getArticles()
-
-        assertFalse(response.isSuccessful)
-        assertEquals(500, response.code())
+        try {
+            createApi().getArticles()
+            throw AssertionError("Expected HttpException")
+        } catch (e: HttpException) {
+            assertEquals(500, e.code())
+        }
     }
 
     @Test
-    fun `getArticles returns failure on 404`() = runTest {
+    fun `getArticles throws on 404`() = runTest {
         serverRule.enqueueJson(404, """{"error":"Not found"}""")
 
-        val response = createApi().getArticles()
-
-        assertFalse(response.isSuccessful)
-        assertEquals(404, response.code())
+        try {
+            createApi().getArticles()
+            throw AssertionError("Expected HttpException")
+        } catch (e: HttpException) {
+            assertEquals(404, e.code())
+        }
     }
 
     @Test
     fun `getArticle returns parsed article on 200`() = runTest {
         serverRule.enqueueJson(200, TestJson.SINGLE_ARTICLE)
 
-        val response = createApi().getArticle(1)
+        val article = createApi().getArticle(1)
 
-        assertTrue(response.isSuccessful)
-        val article = response.body()!!
         assertEquals("Article Detail", article.title)
         assertEquals("Full summary", article.summary)
         assertEquals("NASA", article.newsSite)
     }
 
     @Test
-    fun `getArticle returns failure on 404`() = runTest {
+    fun `getArticle throws on 404`() = runTest {
         serverRule.enqueueJson(404, """{"error":"Not found"}""")
 
-        val response = createApi().getArticle(999)
-
-        assertFalse(response.isSuccessful)
-        assertEquals(404, response.code())
+        try {
+            createApi().getArticle(999)
+            throw AssertionError("Expected HttpException")
+        } catch (e: HttpException) {
+            assertEquals(404, e.code())
+        }
     }
 
     @Test
@@ -111,10 +113,8 @@ class ApiServiceTest {
             }
         """.trimIndent())
 
-        val response = createApi().getArticles()
+        val article = createApi().getArticles().results[0]
 
-        assertTrue(response.isSuccessful)
-        val article = response.body()!!.results[0]
         assertTrue(article.imageUrl == null)
         assertTrue(article.newsSite == null)
         assertTrue(article.publishedAt == null)

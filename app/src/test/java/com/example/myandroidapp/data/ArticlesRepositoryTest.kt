@@ -13,6 +13,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
@@ -57,9 +58,8 @@ class ArticlesRepositoryTest {
         assertTrue(result.isFailure)
         val error = result.exceptionOrNull()
         assertNotNull(error)
-        assertTrue(error is ApiException.ServerError)
-        assertEquals(500, (error as ApiException.ServerError).code)
-        assertTrue(error.message?.contains("Internal error") == true)
+        assertTrue(error is HttpException)
+        assertEquals(500, (error as HttpException).code())
     }
 
     @Test
@@ -69,7 +69,7 @@ class ArticlesRepositoryTest {
         val result = createRepository().getArticles()
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()!!.message?.contains("Not found") == true)
+        assertTrue(result.exceptionOrNull() is HttpException)
     }
 
     @Test
@@ -89,7 +89,7 @@ class ArticlesRepositoryTest {
         val result = createRepository().getArticle(999)
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()!!.message?.contains("Not found") == true)
+        assertTrue(result.exceptionOrNull() is HttpException)
     }
 
     @Test
@@ -130,7 +130,7 @@ class ArticlesRepositoryTest {
         val result = createRepository().searchArticles("test")
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is ApiException.ServerError)
+        assertTrue(result.exceptionOrNull() is HttpException)
     }
 
     @Test
