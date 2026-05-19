@@ -3,14 +3,9 @@ tags:
   - wiki/pattern
 ---
 
----
-tags:
-  - wiki/pattern
----
-
 # Attributes / Actions Pattern
 
-> **Last verified:** 2026-05-17 | **Verified by:** [source]
+> **Last verified:** 2026-05-19 | **Verified by:** [source] — updated Paging 3 preview limitation
 
 ## Qué es
 

@@ -3,14 +3,9 @@ tags:
   - wiki/tool
 ---
 
----
-tags:
-  - wiki/tool
----
-
 # Detekt Setup
 
-> **Last verified:** 2026-05-17 | **Verified by:** [source]
+> **Last verified:** 2026-05-19 | **Verified by:** [source]
 
 ## Plugin Gradle
 
@@ -97,6 +92,5 @@ Workflow en `.github/workflows/ci.yml` — job `detekt` corre en cada PR a `main
 
 ## Ver también
 
-- [[processes/build-and-test]] — Comandos de build y test
-- [[processes/pr-workflow]] — CI en el flujo de PRs
+- [[processes/build-and-test]] — Comandos de build y test, CI pipeline
 - [[tools/key-dependencies]] — Versiones de dependencias

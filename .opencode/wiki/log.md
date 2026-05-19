@@ -1,5 +1,19 @@
 # Changelog del Wiki
 
+## 2026-05-19 (6)
+
+- Wiki audit: recorrido completo de código → wiki
+  - **Fixes:**
+    - Fixed duplicate YAML frontmatter in [[tools/detekt-setup]] and [[patterns/attributes-actions]]
+    - Removed stale DataStore dependency from [[tools/key-dependencies]]
+    - Fixed broken link `[[processes/pr-workflow]]` (page never existed) → [[processes/build-and-test]]
+    - Fixed `[[architecture/app-structure]]` indentation (ui/ incorrectly nested under data/)
+  - **New pages:**
+    - [[patterns/analytics-composite]] — Analytics architecture: interface + Timber + Firebase + Composite
+    - [[architecture/responsive-layout]] — Responsive layout: boxWithConstraints, 840dp breakpoint, DualPaneScreen, pane ViewModel
+  - **Updated [[architecture/app-structure]]** — Added MyApplication lifecycle, SplashScreen API, edge-to-edge, navigation animations, Lottie loading, Settings files, UiState.kt, corrected directory tree
+  - Updated [[index]] — Added new pages, corrected "Preferences" reference
+
 ## 2026-05-19 (5)
 
 - Updated [[architecture/app-structure]] — Renombrado proyecto de `MyAndroidApp` a `MeliChallenge`
@@ -84,7 +98,7 @@
 
 - Added [[tools/detekt-setup]] — Detekt static analysis, config, Compose rules, baseline, CI
 - Updated [[processes/build-and-test]] — Added detekt commands, CI pipeline table
-- Updated [[processes/pr-workflow]] — Added PR template, CODEOWNERS, CI checks section
+- Updated [[processes/build-and-test]] — Added detekt commands, CI pipeline table
 - Updated [[index]] — Added detekt-setup link
 
 ## 2026-05-17

@@ -5,7 +5,7 @@ tags:
 
 # Key Dependencies
 
-> **Last verified:** 2026-05-17 | **Verified by:** [source]
+> **Last verified:** 2026-05-19 | **Verified by:** [source] — removed DataStore (not used)
 
 Resumen de las dependencias principales del proyecto. Versionadas via version catalog (`gradle/libs.versions.toml`).
 
@@ -21,7 +21,7 @@ Resumen de las dependencias principales del proyecto. Versionadas via version ca
 | kotlinx.serialization | 1.6+ | JSON serialization |
 | Coil | 2.6+ | Image loading (Compose) |
 | Paging 3 | 3.3+ | Paginación |
-| DataStore | 1.1+ | Preferences |
+
 | Lottie | 6+ | Animaciones |
 | LeakCanary | 2.13+ | Memory leak detection (debug) |
 | Timber | 5.0+ | Logging |

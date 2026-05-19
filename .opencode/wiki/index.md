@@ -8,8 +8,9 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 
 - [[architecture/app-structure]] — Estructura general del módulo `:app`
 - [[architecture/di-hierarchy]] — Jerarquía de módulos de Hilt DI
-- [[architecture/data-layer]] — Data layer: API, Room, Preferences
+- [[architecture/data-layer]] — Data layer: API, Room
 - [[architecture/clean-architecture-guide]] — Clean Architecture: 3 capas, regla de dependencia, use cases
+- [[architecture/responsive-layout]] — Layout adaptativo phone/tablet con DualPaneScreen
 
 ## Processes
 
@@ -24,6 +25,7 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 - [[patterns/room-paging]] — Room + Paging 3 + RemoteMediator
 - [[patterns/search-strategy]] — Búsqueda local vs API: decisión arquitectónica
 - [[patterns/settings-composable]] — Settings + Composable pattern
+- [[patterns/analytics-composite]] — Analytics con Composite Pattern (Firebase + Timber)
 
 ## Tools
 
