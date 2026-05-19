@@ -4,6 +4,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -13,8 +14,19 @@ import com.example.myandroidapp.ui.articles.list.ArticlesListScreenRoute
 private const val NAV_ANIM_DURATION = 300
 
 @Composable
-fun MainNavigation() {
+fun MainNavigation(
+    selectedArticleId: Int?,
+    onArticleSelected: (Int) -> Unit,
+) {
     val navController = rememberNavController()
+
+    LaunchedEffect(Unit) {
+        selectedArticleId?.let { id ->
+            navController.popBackStack(ArticlesRoute, inclusive = false)
+            navController.navigate(DetailRoute(id))
+        }
+    }
+
     NavHost(navController = navController, startDestination = ArticlesRoute) {
         composable<ArticlesRoute>(
             exitTransition = {
@@ -26,6 +38,7 @@ fun MainNavigation() {
         ) {
             ArticlesListScreenRoute(
                 onArticleClick = { articleId ->
+                    onArticleSelected(articleId)
                     navController.navigate(DetailRoute(articleId))
                 }
             )
@@ -50,3 +63,4 @@ fun MainNavigation() {
         }
     }
 }
+

@@ -12,9 +12,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,11 +27,12 @@ import com.example.myandroidapp.ui.articles.list.ArticlesListViewModel
 
 @Composable
 fun DualPaneScreen(
+    selectedArticleId: Int?,
+    onArticleSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
     listViewModel: ArticlesListViewModel = hiltViewModel(),
     detailViewModel: ArticleDetailPaneViewModel = hiltViewModel(),
 ) {
-    var selectedArticleId by remember { mutableStateOf<Int?>(null) }
     val searchQuery by listViewModel.searchQuery.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -48,7 +46,7 @@ fun DualPaneScreen(
                     actions = ArticlesListActions(
                         onSearchTextChange = listViewModel::onSearchTextChange,
                         onClearSearch = listViewModel::clearSearch,
-                        onArticleClick = { selectedArticleId = it },
+                        onArticleClick = onArticleSelected,
                         sendAnalytics = listViewModel::sendAnalytics,
                     ),
                     modifier = Modifier.fillMaxSize(),
