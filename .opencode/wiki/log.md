@@ -1,5 +1,12 @@
 # Changelog del Wiki
 
+## 2026-05-19 (8)
+
+- Documentada estructura de la Spaceflight News API: schema idéntico en list/detail, sin campo `body`/`content`
+  - Actualizado [[architecture/data-layer]] — nota sobre API agregadora, schema idéntico, decisión de mantener fetch del detalle
+  - Actualizado [[tools/retrofit-setup]] — nueva sección "Estructura de la API"
+  - Actualizado [[patterns/mvvm-repository]] — nota sobre redundancia del fetch individual y por qué se mantiene
+
 ## 2026-05-19 (7)
 
 - Offline detection + graceful degradation

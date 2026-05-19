@@ -27,6 +27,10 @@ interface ApiService {
 
 Los endpoints devuelven dominio directo. No se usa `Response<T>` — el `CallAdapter` maneja errores automáticamente.
 
+## Estructura de la API
+
+La Spaceflight News API es un **agregador** de noticias, no hostea contenido. Ambos endpoints (`GET /articles/` y `GET /articles/{id}/`) devuelven el **mismo schema de artículo**. No existe campo `body` ni `content` — solo `summary` (resumen corto) y `url` (link al artículo original). [source]
+
 ## HTTP Error handling
 
 `HttpErrorCallAdapterFactory` es un `CallAdapter.Factory` registrado en `NetworkModule`. Intercepta `Call.enqueue()`: si la response es 2xx la deja pasar, si no, parsea el error y tira una `ApiException` tipada:

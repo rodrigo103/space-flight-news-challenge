@@ -17,7 +17,9 @@ ApiService (Retrofit)
     └── GET /articles/{id}/                     → Article
 ```
 
-- Base URL: `https://api.spaceflightnewsapi.net/v4`
+- Base URL: `https://api.spaceflightnewsapi.net/v4` — API agregadora, no hostea contenido completo
+- Ambos endpoints (`list` y `detail`) devuelven el **mismo schema** de artículo: `id`, `title`, `authors`, `url`, `image_url`, `news_site`, `summary`, `published_at`, `updated_at`, `featured`, `launches`, `events`. No existe campo `body`/`content`. [source]
+- El endpoint de detalle se llama por corrección arquitectónica (fetch fresco, cache fallback), aunque los datos sean redundantes con el listado. Ver [[patterns/mvvm-repository]]. [analysis]
 - `OkHttpClient` con logging interceptor en debug
 - `kotlinx.serialization` converter (no Gson)
 - `HttpErrorCallAdapterFactory` — `CallAdapter.Factory` registrado en `NetworkModule`. Intercepta `enqueue()` y convierte respuestas no-2xx en `ApiException` (BadRequest, Unauthorized, NotFound, Conflict, ServerError) o `IOException`. [source]

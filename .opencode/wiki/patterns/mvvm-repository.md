@@ -154,6 +154,8 @@ override suspend fun getCachedArticle(id: Int): Article? =
 
 Para el fetch individual (`getArticle(id)`), `GetArticleUseCase` implementa un triple intento: API → Room cache → timeout/error. Si el artículo ya fue cacheado por Paging 3 al navegar la lista, se muestra al instante aunque no haya conexión.
 
+> **Nota:** Ambos endpoints de la API (`GET /articles/` y `GET /articles/{id}/`) devuelven el mismo schema. La llamada individual del detalle es redundante en datos, pero se mantiene por corrección arquitectónica, permitiendo cache fallback y frescura de datos. [analysis]
+
 **Diferencias con "cache optimista" clásico:**
 
 | Aspecto | Cache optimista (mem→DB→red) | Stale-while-revalidate (Paging 3) |
