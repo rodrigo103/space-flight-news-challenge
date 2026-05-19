@@ -117,7 +117,7 @@ La wiki del proyecto cubre 5 categorías (arquitectura, patrones, procesos, herr
 <p align="center">
   <img src="screenshots/phone-list.png" width="30%" alt="Teléfono — Lista" />
   &nbsp;&nbsp;
-  <img src="screenshots/tablet-dual.png" width="38%" alt="Tablet — Dual pane" />
+  <img src="screenshots/tablet-dual.png" width="63%" alt="Tablet — Dual pane" />
   &nbsp;&nbsp;
   <img src="screenshots/phone-error.png" width="30%" alt="Teléfono — Error" />
 </p>
