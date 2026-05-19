@@ -32,12 +32,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -48,7 +46,6 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import kotlin.math.tan
 import coil3.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -206,8 +203,6 @@ private fun GradientBackground(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val currentTopColor by rememberUpdatedState(topColor)
-    val currentBottomColor by rememberUpdatedState(bottomColor)
     Surface(
         color = containerColor,
         modifier = modifier.fillMaxSize(),
@@ -216,27 +211,11 @@ private fun GradientBackground(
             Modifier
                 .fillMaxSize()
                 .drawWithCache {
-                    val offset = size.height * tan(Math.toRadians(11.06).toFloat())
-                    val start = Offset(size.width / 2 + offset / 2, 0f)
-                    val end = Offset(size.width / 2 - offset / 2, size.height)
-
-                    val topGradient = Brush.linearGradient(
-                        0f to currentTopColor,
-                        0.724f to Color.Transparent,
-                        start = start,
-                        end = end,
+                    val gradient = Brush.verticalGradient(
+                        0.0f to topColor,
+                        1.0f to bottomColor,
                     )
-                    val bottomGradient = Brush.linearGradient(
-                        0.2552f to Color.Transparent,
-                        1f to currentBottomColor,
-                        start = start,
-                        end = end,
-                    )
-
-                    onDrawBehind {
-                        drawRect(topGradient)
-                        drawRect(bottomGradient)
-                    }
+                    onDrawBehind { drawRect(gradient) }
                 },
         ) {
             content()
