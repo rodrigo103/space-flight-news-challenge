@@ -1,5 +1,25 @@
 # Changelog del Wiki
 
+## 2026-05-19 (7)
+
+- Offline detection + graceful degradation
+  - Created `data/connectivity/ConnectivityStatus` (enum: Available, Unavailable)
+  - Created `data/connectivity/ConnectivityObserver` — reactive monitoring via `ConnectivityManager.NetworkCallback` + `callbackFlow`
+  - Created `ui/components/OfflineBanner` — animated slide-in/out banner with `SignalWifiOff` icon
+  - Updated `MainActivity` — injects `ConnectivityObserver`, passes `Flow<ConnectivityStatus>` to `ResponsiveApp`
+  - Updated `ui/ResponsiveApp` — overlays `OfflineBanner` on top of entire app when offline
+  - Updated `ArticleRemoteMediator` — network exceptions (`UnknownHostException`, `ConnectException`, `SocketTimeoutException`) return `Success` instead of `Error`, keeping cached Paging data visible
+  - Updated `ArticlesListScreen` — full-screen error only when `itemCount == 0`; otherwise shows cached list + Snackbar
+  - Added `ArticlesRepository.getCachedArticle(id)` — Room fallback for detail screen
+  - Updated `GetArticleUseCase` — 3-tier strategy: API → Room cache → timeout error
+  - Updated `ArticleDetailScreen` + `DualPaneScreen` — added retry button on error state
+  - Added `ACCESS_NETWORK_STATE` permission to `AndroidManifest.xml`
+  - Added `offline_banner` string resource
+  - Updated [[architecture/app-structure]] — added `connectivity/` and `components/` directories
+  - Updated [[architecture/responsive-layout]] — documented ConnectivityObserver + OfflineBanner integration
+  - Updated [[patterns/room-paging]] — documented offline-first RemoteMediator error handling
+  - Updated [[patterns/mvvm-repository]] — documented GetArticleUseCase cache fallback
+
 ## 2026-05-19 (6)
 
 - Wiki audit: recorrido completo de código → wiki

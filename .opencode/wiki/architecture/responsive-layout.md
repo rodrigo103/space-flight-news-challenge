@@ -5,7 +5,7 @@ tags:
 
 # Responsive Layout + Dual Pane
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source]
+> **Last verified:** 2026-05-19 | **Verified by:** [source] — added ConnectivityObserver + OfflineBanner
 
 ## Estrategia adaptativa
 
@@ -23,23 +23,36 @@ El breakpoint de **840dp** es el umbral estándar de Material 3 para tablet.
 
 ## ResponsiveApp
 
+`ResponsiveApp` recibe un `Flow<ConnectivityStatus>` desde `MainActivity` y superpone un `OfflineBanner` animado cuando no hay conexión:
+
 ```kotlin
 @Composable
-fun ResponsiveApp(modifier: Modifier = Modifier) {
+fun ResponsiveApp(
+    connectivityStatus: Flow<ConnectivityStatus>,
+    modifier: Modifier = Modifier,
+) {
     var selectedArticleId by rememberSaveable { mutableStateOf<Int?>(null) }
+    val status by connectivityStatus.collectAsState(initial = ConnectivityStatus.Available)
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        if (maxWidth < DUAL_PANE_BREAKPOINT) {
-            MainNavigation(
-                selectedArticleId = selectedArticleId,
-                onArticleSelected = { selectedArticleId = it },
-            )
-        } else {
-            DualPaneScreen(
-                selectedArticleId = selectedArticleId,
-                onArticleSelected = { selectedArticleId = it },
-            )
+    Box(modifier = modifier.fillMaxSize()) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            if (maxWidth < DUAL_PANE_BREAKPOINT) {
+                MainNavigation(
+                    selectedArticleId = selectedArticleId,
+                    onArticleSelected = { selectedArticleId = it },
+                )
+            } else {
+                DualPaneScreen(
+                    selectedArticleId = selectedArticleId,
+                    onArticleSelected = { selectedArticleId = it },
+                )
+            }
         }
+
+        OfflineBanner(
+            connectivityStatus = status,
+            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
+        )
     }
 }
 ```
@@ -47,6 +60,8 @@ fun ResponsiveApp(modifier: Modifier = Modifier) {
 - `selectedArticleId` se comparte entre ambos layouts.
 - `rememberSaveable` sobrevive a cambios de configuración (rotación, fold/unfold).
 - En phone, el estado se usa para navegación programática desde `LaunchedEffect` en `MainNavigation`.
+- `ConnectivityObserver` (inyectado en `MainActivity`) expone `Flow<ConnectivityStatus>` reactivo vía `ConnectivityManager.NetworkCallback`.
+- `OfflineBanner` usa `AnimatedVisibility` con slide vertical, aparece sobre la UI principal sin interrumpir la navegación. [source]
 
 ## MainNavigation (phone)
 

@@ -5,7 +5,7 @@ tags:
 
 # MVVM + Repository Pattern
 
-> **Last verified:** 2026-05-17 | **Verified by:** [source]
+> **Last verified:** 2026-05-19 | **Verified by:** [source] — GetArticleUseCase now includes Room cache fallback
 
 ## Estructura por feature
 
@@ -73,9 +73,18 @@ El `operator fun invoke()` permite llamarlo como función:
 class GetArticleUseCase @Inject constructor(
     private val repository: ArticlesRepository
 ) {
-    suspend operator fun invoke(id: Int, timeoutMs: Long = 30_000L): Result<Article> =
-        withTimeoutOrNull(timeoutMs) { repository.getArticle(id) }
-            ?: Result.failure(Exception("Timeout al cargar el artículo"))
+    suspend operator fun invoke(id: Int): Result<Article> {
+        val networkResult = withTimeoutOrNull(30_000L) {
+            repository.getArticle(id)
+        }
+
+        networkResult?.getOrNull()?.let { return Result.success(it) }
+
+        val cached = repository.getCachedArticle(id)
+        if (cached != null) return Result.success(cached)
+
+        return networkResult ?: Result.failure(Exception("Timeout al cargar el artículo"))
+    }
 }
 
 // Uso
@@ -85,6 +94,35 @@ val article = getArticleUseCase(id)  // vs getArticleUseCase.invoke(id)
 ### Cuándo NO usar use cases
 
 Para 2 pantallas con 1 fuente de datos, un use case que solo delega al repositorio sin lógica real es over-engineering. Aplicar YAGNI.
+
+## Cache fallback en GetArticleUseCase
+
+Cuando la red falla, `GetArticleUseCase` hace fallback a Room para no mostrar pantalla de error si el artículo ya fue cacheado por Paging 3 [source]:
+
+```kotlin
+suspend operator fun invoke(articleId: Int): Result<Article> {
+    val networkResult = withTimeoutOrNull(REQUEST_TIMEOUT_MS) {
+        repository.getArticle(articleId)
+    }
+
+    val article = networkResult?.getOrNull()
+    if (article != null) return Result.success(article)
+
+    val cached = repository.getCachedArticle(articleId)
+    if (cached != null) {
+        Timber.d("Article %d loaded from cache", articleId)
+        return Result.success(cached)
+    }
+
+    return networkResult ?: Result.failure(Exception("Request timed out"))
+}
+```
+
+- Intenta API → éxito → devuelve datos frescos.
+- API falla → busca en Room vía `repository.getCachedArticle(id)`.
+- Room tiene el artículo (porque Paging 3 lo cacheó antes) → `Success` con datos stale.
+- Ninguna fuente disponible → `Failure` con el error original.
+- El `OfflineBanner` global indica al usuario que está viendo datos cacheados. [source]
 
 ## Stale-while-revalidate via Paging 3
 
@@ -109,17 +147,12 @@ ApiService — HTTP request
 3. **REFRESH**: En `LoadType.REFRESH` (primer load o pull-to-refresh), el RemoteMediator limpia la DB y recarga desde la página 0.
 
 ```kotlin
-// Suspend fun: stale-while-revalidate manual
-class GetArticleUseCase @Inject constructor(
-    private val repository: ArticlesRepository
-) {
-    suspend operator fun invoke(id: Int, timeoutMs: Long = 30_000L): Result<Article> =
-        withTimeoutOrNull(timeoutMs) { repository.getArticle(id) }
-            ?: Result.failure(Exception("Timeout al cargar el artículo"))
-}
+// Repository — cache fallback para detalle individual
+override suspend fun getCachedArticle(id: Int): Article? =
+    articleDao.getById(id)?.toArticle()
 ```
 
-Para el fetch individual (`getArticle(id)`), hay un `withTimeoutOrNull` de 30s: si la API no responde, se devuelve error en lugar de un spinner infinito.
+Para el fetch individual (`getArticle(id)`), `GetArticleUseCase` implementa un triple intento: API → Room cache → timeout/error. Si el artículo ya fue cacheado por Paging 3 al navegar la lista, se muestra al instante aunque no haya conexión.
 
 **Diferencias con "cache optimista" clásico:**
 

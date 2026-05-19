@@ -6,6 +6,9 @@ import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import com.example.myandroidapp.data.ApiService
 import kotlinx.coroutines.CancellationException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 @OptIn(ExperimentalPagingApi::class)
 class ArticleRemoteMediator(
@@ -34,6 +37,12 @@ class ArticleRemoteMediator(
             MediatorResult.Success(endOfPaginationReached = articles.size < PAGE_SIZE)
         } catch (e: CancellationException) {
             throw e
+        } catch (e: UnknownHostException) {
+            MediatorResult.Success(endOfPaginationReached = false)
+        } catch (e: ConnectException) {
+            MediatorResult.Success(endOfPaginationReached = false)
+        } catch (e: SocketTimeoutException) {
+            MediatorResult.Success(endOfPaginationReached = false)
         } catch (e: Exception) {
             MediatorResult.Error(e)
         }

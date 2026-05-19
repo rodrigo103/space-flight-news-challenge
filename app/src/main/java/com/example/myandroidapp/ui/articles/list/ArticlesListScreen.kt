@@ -73,11 +73,14 @@ fun ArticlesListScreen(
     val unknownError = stringResource(R.string.unknown_error)
 
     LaunchedEffect(articles.loadState) {
-        val error = when {
-            articles.loadState.refresh is LoadState.Error -> articles.loadState.refresh as LoadState.Error
-            articles.loadState.append is LoadState.Error -> articles.loadState.append as LoadState.Error
-            else -> null
-        }
+        val refreshError = articles.loadState.refresh as? LoadState.Error
+        val appendError = articles.loadState.append as? LoadState.Error
+        val error = refreshError ?: appendError
+        val hasCachedItems = articles.itemCount > 0
+
+        // Only show snackbar when there are cached items or for append errors
+        if (refreshError != null && !hasCachedItems) return@LaunchedEffect
+
         error?.let {
             snackbarHostState.showSnackbar(it.error.message ?: unknownError)
         }
@@ -136,41 +139,107 @@ fun ArticlesListScreen(
 
                 when (val refreshState = articles.loadState.refresh) {
                     is LoadState.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            val composition by rememberLottieComposition(
-                                LottieCompositionSpec.RawRes(
-                                    R.raw.space_loading
+                        if (articles.itemCount == 0) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.space_loading))
+                                LottieAnimation(
+                                    composition = composition,
+                                    modifier = Modifier.size(160.dp),
+                                    iterations = LottieConstants.IterateForever,
                                 )
-                            )
-                            LottieAnimation(
-                                composition = composition,
-                                modifier = Modifier.size(160.dp),
-                                iterations = LottieConstants.IterateForever,
-                            )
+                            }
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                items(
+                                    count = articles.itemCount,
+                                    key = articles.itemKey { it.id },
+                                    contentType = articles.itemContentType { "article" },
+                                ) { index ->
+                                    val article = articles[index]
+                                    if (article != null) {
+                                        articleCardSettings(
+                                            article = article,
+                                            onClick = {
+                                                actions.sendAnalytics(
+                                                    "article_selected",
+                                                    mapOf("id" to article.id.toString()),
+                                                )
+                                                actions.onArticleClick(article.id)
+                                            },
+                                        )()
+                                    }
+                                }
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                                    }
+                                }
+                            }
                         }
                     }
 
                     is LoadState.Error -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = refreshState.error.message ?: stringResource(R.string.unknown_error),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            androidx.compose.material3.Button(
-                                onClick = { articles.retry() }
+                        if (articles.itemCount == 0) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
                             ) {
-                                Text(stringResource(R.string.retry))
+                                Text(
+                                    text = refreshState.error.message ?: stringResource(R.string.unknown_error),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                androidx.compose.material3.Button(
+                                    onClick = { articles.retry() }
+                                ) {
+                                    Text(stringResource(R.string.retry))
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                items(
+                                    count = articles.itemCount,
+                                    key = articles.itemKey { it.id },
+                                    contentType = articles.itemContentType { "article" },
+                                ) { index ->
+                                    val article = articles[index]
+                                    if (article != null) {
+                                        articleCardSettings(
+                                            article = article,
+                                            onClick = {
+                                                actions.sendAnalytics(
+                                                    "article_selected",
+                                                    mapOf("id" to article.id.toString()),
+                                                )
+                                                actions.onArticleClick(article.id)
+                                            },
+                                        )()
+                                    }
+                                }
+                                if (articles.loadState.append is LoadState.Loading) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -204,7 +273,7 @@ fun ArticlesListScreen(
                                             onClick = {
                                                 actions.sendAnalytics(
                                                     "article_selected",
-                                                    mapOf("id" to article.id.toString())
+                                                    mapOf("id" to article.id.toString()),
                                                 )
                                                 actions.onArticleClick(article.id)
                                             },

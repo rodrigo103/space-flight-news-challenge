@@ -9,12 +9,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.myandroidapp.data.connectivity.ConnectivityObserver
 import com.example.myandroidapp.theme.MeliChallengeTheme
 import com.example.myandroidapp.ui.ResponsiveApp
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var connectivityObserver: ConnectivityObserver
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -25,7 +30,11 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
-                ) { ResponsiveApp() }
+                ) {
+                    ResponsiveApp(
+                        connectivityStatus = connectivityObserver.status,
+                    )
+                }
             }
         }
     }

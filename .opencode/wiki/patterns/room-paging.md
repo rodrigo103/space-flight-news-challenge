@@ -5,7 +5,7 @@ tags:
 
 # Room + Paging 3 + RemoteMediator
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source]
+> **Last verified:** 2026-05-19 | **Verified by:** [source] — added offline-aware RemoteMediator error handling
 
 ## Room setup
 
@@ -32,7 +32,33 @@ Usa `PagingSource` de Room + `Flow<PagingData<T>>` expuesto por Repository.
 5. Room notifica al `PagingSource` que hay nuevos datos
 6. `Flow<PagingData<T>>` emite nuevo estado a la UI
 
-### Load type
+### Error handling offline-first
+
+`ArticleRemoteMediator` distingue errores de red de otros errores [source]:
+
+```kotlin
+return try {
+    val response = apiService.getArticles(limit = PAGE_SIZE, offset = offset)
+    val articles = response.results
+    articleDao.insertAll(articles.map { it.toEntity() })
+    MediatorResult.Success(endOfPaginationReached = articles.size < PAGE_SIZE)
+} catch (e: CancellationException) {
+    throw e
+} catch (e: UnknownHostException) {
+    MediatorResult.Success(endOfPaginationReached = false)
+} catch (e: ConnectException) {
+    MediatorResult.Success(endOfPaginationReached = false)
+} catch (e: SocketTimeoutException) {
+    MediatorResult.Success(endOfPaginationReached = false)
+} catch (e: Exception) {
+    MediatorResult.Error(e)
+}
+```
+
+- `UnknownHostException`, `ConnectException`, `SocketTimeoutException` → `Success(endOfPaginationReached = false)`: **no interrumpe Paging**, mantiene datos cacheados visibles, Paging reintentará.
+- Otros errores (HTTP, serialización) → `MediatorResult.Error(e)`: se propaga como `LoadState.Error`.
+
+En la UI (`ArticlesListScreen`), el error full-screen solo se muestra si `articles.itemCount == 0`; con datos cacheados, se muestra un `Snackbar` y la lista sigue visible. [source]
 
 - `LoadType.REFRESH` — Limpia DB y recarga desde página 0
 - `LoadType.PREPEND` — No implementado (API no soporta backward pagination)

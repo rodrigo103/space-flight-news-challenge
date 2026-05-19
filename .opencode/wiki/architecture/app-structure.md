@@ -5,7 +5,7 @@ tags:
 
 # App Structure
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — removed `DataStoreModule`, `AppPreferences`, `preferences/` directory
+> **Last verified:** 2026-05-19 | **Verified by:** [source] — added `connectivity/`, `components/`, offline banner
 
 Estructura del módulo `:app` en el proyecto `MeliChallenge`. App monomódulo con Jetpack Compose.
 
@@ -30,6 +30,9 @@ com.example.myandroidapp/
 │   ├── ApiException.kt           # HTTP error sealed exception hierarchy
 │   ├── HttpErrorCallAdapter.kt   # CallAdapter.Factory
 │   ├── ArticlesRepository.kt     # Repository (API + Room)
+│   ├── connectivity/
+│   │   ├── ConnectivityStatus.kt    # Available / Unavailable enum
+│   │   └── ConnectivityObserver.kt  # Reactive network monitoring (callbackFlow)
 │   ├── usecase/
 │   │   └── GetArticleUseCase.kt  # Timeout + fetch article by ID
 │   └── local/
@@ -41,6 +44,8 @@ com.example.myandroidapp/
 │   ├── UiState.kt                # Loading / Success<T> / Error
 │   ├── DualPaneScreen.kt         # Adaptive layout (list + detail, tablet)
 │   ├── ResponsiveApp.kt          # Window size-based routing (phone vs tablet)
+│   ├── components/
+│   │   └── OfflineBanner.kt      # Animated offline banner (slide in/out)
 │   ├── articles/
 │   │   ├── list/
 │   │   │   ├── ArticlesListScreen.kt

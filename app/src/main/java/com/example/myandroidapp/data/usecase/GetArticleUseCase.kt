@@ -3,6 +3,7 @@ package com.example.myandroidapp.data.usecase
 import com.example.myandroidapp.data.Article
 import com.example.myandroidapp.data.ArticlesRepository
 import kotlinx.coroutines.withTimeoutOrNull
+import timber.log.Timber
 import javax.inject.Inject
 
 class GetArticleUseCase @Inject constructor(
@@ -13,8 +14,19 @@ class GetArticleUseCase @Inject constructor(
     }
 
     suspend operator fun invoke(articleId: Int): Result<Article> {
-        return withTimeoutOrNull(REQUEST_TIMEOUT_MS) {
+        val networkResult = withTimeoutOrNull(REQUEST_TIMEOUT_MS) {
             repository.getArticle(articleId)
-        } ?: Result.failure(Exception("Request timed out"))
+        }
+
+        val article = networkResult?.getOrNull()
+        if (article != null) return Result.success(article)
+
+        val cached = repository.getCachedArticle(articleId)
+        if (cached != null) {
+            Timber.d("Article %d loaded from cache", articleId)
+            return Result.success(cached)
+        }
+
+        return networkResult ?: Result.failure(Exception("Request timed out"))
     }
 }

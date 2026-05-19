@@ -16,7 +16,10 @@ fun ArticleDetailScreenRoute(
 
     ArticleDetailScreen(
         attributes = ArticleDetailAttributes(state = state),
-        actions = ArticleDetailActions(onBack = onBack),
+        actions = ArticleDetailActions(
+            onBack = onBack,
+            onRetry = viewModel::loadArticle,
+        ),
         modifier = modifier,
     )
 }

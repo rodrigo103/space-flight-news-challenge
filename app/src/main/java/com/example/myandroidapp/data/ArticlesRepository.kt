@@ -21,6 +21,8 @@ interface ArticlesRepository {
 
     suspend fun getArticle(id: Int): Result<Article>
 
+    suspend fun getCachedArticle(id: Int): Article?
+
     fun getArticlesPaged(searchQuery: String? = null): Flow<PagingData<Article>>
 }
 
@@ -49,6 +51,9 @@ class DefaultArticlesRepository @Inject constructor(
         }.onFailure {
             Timber.e(it, "Error fetching article with id: %d", id)
         }
+
+    override suspend fun getCachedArticle(id: Int): Article? =
+        articleDao.getById(id)?.toArticle()
 
     @OptIn(ExperimentalPagingApi::class)
     override fun getArticlesPaged(searchQuery: String?): Flow<PagingData<Article>> {
