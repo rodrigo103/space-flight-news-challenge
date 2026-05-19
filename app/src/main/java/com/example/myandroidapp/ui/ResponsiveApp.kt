@@ -11,12 +11,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.myandroidapp.MainNavigation
 
+private val DUAL_PANE_BREAKPOINT = 840.dp
+
 @Composable
 fun ResponsiveApp(modifier: Modifier = Modifier) {
     var selectedArticleId by rememberSaveable { mutableStateOf<Int?>(null) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        if (maxWidth < 840.dp) {
+        if (maxWidth < DUAL_PANE_BREAKPOINT) {
             MainNavigation(
                 selectedArticleId = selectedArticleId,
                 onArticleSelected = { selectedArticleId = it },
