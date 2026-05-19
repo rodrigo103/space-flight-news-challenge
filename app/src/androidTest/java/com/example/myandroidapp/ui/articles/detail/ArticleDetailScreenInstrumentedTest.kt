@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.myandroidapp.test.TestFixtures
-import com.example.myandroidapp.ui.UiState
+import com.example.myandroidapp.ui.common.UiState
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

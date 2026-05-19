@@ -1,5 +1,26 @@
 # Changelog del Wiki
 
+## 2026-05-19 (9)
+
+- Reorganización arquitectónica del proyecto en 3 capas (domain/data/ui)
+  - **Creado `domain/`** — capa de dominio pura:
+    - `domain/model/Article.kt` — modelo de dominio (`Article`, `ArticleResponse`, `Author`, `Socials`)
+    - `domain/repository/ArticlesRepository.kt` — interfaz del repositorio
+    - `domain/usecase/GetArticleUseCase.kt` — use case con timeout + cache fallback
+  - **Reorganizado `data/`** — solo implementaciones:
+    - `data/remote/` — `ApiService`, `ApiException`, `HttpErrorCallAdapter`
+    - `data/local/` — Room entities, DAOs, RemoteMediator (sin cambios)
+    - `data/repository/DefaultArticlesRepository.kt` — implementación del repositorio
+    - `data/mappers/ArticleMappers.kt` — extensiones de mapeo Entity ↔ Domain (extraídas de `ArticleEntity`)
+  - **Reorganizado `ui/`**:
+    - `ui/navigation/` — `Routes`, `Navigation`, `ResponsiveApp`, `DualPaneScreen`
+    - `ui/common/UiState.kt` — estado genérico Loading/Success/Error
+    - `ui/components/OfflineBanner.kt` — sin cambios
+    - `ui/articles/`, `ui/preview/`, `ui/theme/` — sin cambios
+  - **Eliminados directorios vacíos**: `data/usecase/`
+  - Actualizado [[architecture/app-structure]] — nueva estructura de paquetes + tabla de capas
+  - Actualizado [[architecture/data-layer]] — nuevos paths `data/remote/`, `data/mappers/`, separación interfaz/impl
+
 ## 2026-05-19 (8)
 
 - Documentada estructura de la Spaceflight News API: schema idéntico en list/detail, sin campo `body`/`content`

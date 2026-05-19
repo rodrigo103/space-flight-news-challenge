@@ -1,5 +1,7 @@
-package com.example.myandroidapp.data
+package com.example.myandroidapp.data.remote
 
+import com.example.myandroidapp.domain.model.Article
+import com.example.myandroidapp.domain.model.ArticleResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query

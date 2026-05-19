@@ -1,4 +1,4 @@
-package com.example.myandroidapp
+package com.example.myandroidapp.ui.navigation
 
 import kotlinx.serialization.Serializable
 

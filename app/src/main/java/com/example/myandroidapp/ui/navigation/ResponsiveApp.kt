@@ -1,4 +1,4 @@
-package com.example.myandroidapp.ui
+package com.example.myandroidapp.ui.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,7 +14,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.myandroidapp.MainNavigation
 import com.example.myandroidapp.data.connectivity.ConnectivityStatus
 import com.example.myandroidapp.ui.components.OfflineBanner
 import kotlinx.coroutines.flow.Flow
@@ -54,4 +53,3 @@ fun ResponsiveApp(
         )
     }
 }
-

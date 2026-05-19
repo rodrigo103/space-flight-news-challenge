@@ -1,6 +1,7 @@
 package com.example.myandroidapp.data
 
 import com.example.myandroidapp.TestJson
+import com.example.myandroidapp.data.remote.ApiService
 import com.example.myandroidapp.rules.MockWebServerRule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json

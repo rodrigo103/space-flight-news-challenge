@@ -1,4 +1,4 @@
-package com.example.myandroidapp.data
+package com.example.myandroidapp.data.remote
 
 import kotlinx.coroutines.CancellationException
 import okhttp3.ResponseBody

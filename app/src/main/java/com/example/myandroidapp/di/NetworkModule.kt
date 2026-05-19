@@ -1,7 +1,7 @@
 package com.example.myandroidapp.di
 
-import com.example.myandroidapp.data.ApiService
-import com.example.myandroidapp.data.HttpErrorCallAdapterFactory
+import com.example.myandroidapp.data.remote.ApiService
+import com.example.myandroidapp.data.remote.HttpErrorCallAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

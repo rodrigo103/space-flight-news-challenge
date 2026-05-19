@@ -5,9 +5,9 @@ tags:
 
 # App Structure
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — added `connectivity/`, `components/`, offline banner
+> **Last verified:** 2026-05-19 | **Verified by:** [source] — reorganized into domain/data/ui layers, extracted mappers package
 
-Estructura del módulo `:app` en el proyecto `MeliChallenge`. App monomódulo con Jetpack Compose.
+Estructura del módulo `:app` en el proyecto `MeliChallenge`. App monomódulo con Jetpack Compose, organizada en 3 capas (domain, data, ui) + di + analytics.
 
 ## Package structure
 
@@ -15,8 +15,6 @@ Estructura del módulo `:app` en el proyecto `MeliChallenge`. App monomódulo co
 com.example.myandroidapp/
 ├── MyApplication.kt              # Hilt Application
 ├── MainActivity.kt               # Entry point, setContent
-├── Routes.kt                     # Route sealed class definitions
-├── Navigation.kt                 # NavHost + NavController setup
 ├── di/
 │   ├── AppModule.kt              # Provider bindings (isDebug)
 │   ├── DispatcherModule.kt       # Coroutine dispatchers (IoDispatcher, DefaultDispatcher)
@@ -24,28 +22,44 @@ com.example.myandroidapp/
 │   ├── DatabaseModule.kt         # Room database + DAO
 │   ├── RepositoryModule.kt       # Repository bindings
 │   └── AnalyticsModule.kt        # AnalyticsHelper binding
+├── domain/
+│   ├── model/
+│   │   └── Article.kt            # Domain model + ArticleResponse, Author, Socials
+│   ├── repository/
+│   │   └── ArticlesRepository.kt # Repository interface
+│   └── usecase/
+│       └── GetArticleUseCase.kt  # Timeout + fetch article by ID
 ├── data/
-│   ├── Article.kt                # Domain model + API response
-│   ├── ApiService.kt             # Retrofit interface
-│   ├── ApiException.kt           # HTTP error sealed exception hierarchy
-│   ├── HttpErrorCallAdapter.kt   # CallAdapter.Factory
-│   ├── ArticlesRepository.kt     # Repository (API + Room)
-│   ├── connectivity/
-│   │   ├── ConnectivityStatus.kt    # Available / Unavailable enum
-│   │   └── ConnectivityObserver.kt  # Reactive network monitoring (callbackFlow)
-│   ├── usecase/
-│   │   └── GetArticleUseCase.kt  # Timeout + fetch article by ID
-│   └── local/
-│       ├── AppDatabase.kt
-│       ├── ArticleEntity.kt
-│       ├── ArticleDao.kt
-│       └── ArticleRemoteMediator.kt
+│   ├── remote/
+│   │   ├── ApiService.kt         # Retrofit interface
+│   │   ├── ApiException.kt       # HTTP error sealed exception hierarchy
+│   │   └── HttpErrorCallAdapter.kt # CallAdapter.Factory
+│   ├── local/
+│   │   ├── AppDatabase.kt
+│   │   ├── ArticleEntity.kt
+│   │   ├── ArticleDao.kt
+│   │   └── ArticleRemoteMediator.kt
+│   ├── repository/
+│   │   └── DefaultArticlesRepository.kt  # Repository implementation
+│   ├── mappers/
+│   │   └── ArticleMappers.kt      # Entity ↔ Domain mapping extensions
+│   └── connectivity/
+│       ├── ConnectivityStatus.kt    # Available / Unavailable enum
+│       └── ConnectivityObserver.kt  # Reactive network monitoring (callbackFlow)
 ├── ui/
-│   ├── UiState.kt                # Loading / Success<T> / Error
-│   ├── DualPaneScreen.kt         # Adaptive layout (list + detail, tablet)
-│   ├── ResponsiveApp.kt          # Window size-based routing (phone vs tablet)
+│   ├── theme/
+│   │   ├── Color.kt
+│   │   ├── Theme.kt
+│   │   └── Type.kt
+│   ├── navigation/
+│   │   ├── Routes.kt              # Route sealed class definitions
+│   │   ├── Navigation.kt          # NavHost + NavController setup
+│   │   ├── ResponsiveApp.kt       # Window size-based routing (phone vs tablet)
+│   │   └── DualPaneScreen.kt      # Adaptive layout (list + detail, tablet)
+│   ├── common/
+│   │   └── UiState.kt             # Loading / Success<T> / Error
 │   ├── components/
-│   │   └── OfflineBanner.kt      # Animated offline banner (slide in/out)
+│   │   └── OfflineBanner.kt       # Animated offline banner (slide in/out)
 │   ├── articles/
 │   │   ├── list/
 │   │   │   ├── ArticlesListScreen.kt
@@ -59,20 +73,26 @@ com.example.myandroidapp/
 │   │       ├── ArticleDetailScreenState.kt
 │   │       ├── ArticleDetailContentSettings.kt
 │   │       ├── ArticleDetailViewModel.kt        # Phone detail (SavedStateHandle)
-│   │       └── ArticleDetailPaneViewModel.kt  # Tablet detail (dynamic articleId)
+│   │       └── ArticleDetailPaneViewModel.kt    # Tablet detail (dynamic articleId)
 │   └── preview/
 │       ├── ArticlesListScreenPreviews.kt
 │       └── ArticleDetailScreenPreviews.kt
-├── analytics/
-│   ├── AnalyticsHelper.kt           # Interface
-│   ├── TimberAnalyticsHelper.kt     # Logcat logging
-│   ├── FirebaseAnalyticsHelper.kt   # Firebase events
-│   └── CompositeAnalyticsHelper.kt  # Composite pattern (multi-dispatch)
-└── theme/
-    ├── Color.kt
-    ├── Theme.kt
-    └── Type.kt
+└── analytics/
+    ├── AnalyticsHelper.kt           # Interface
+    ├── TimberAnalyticsHelper.kt     # Logcat logging
+    ├── FirebaseAnalyticsHelper.kt   # Firebase events
+    └── CompositeAnalyticsHelper.kt  # Composite pattern (multi-dispatch)
 ```
+
+## Layer separation
+
+| Layer | Package | Contents |
+|-------|---------|----------|
+| Domain | `domain/` | Models (`Article`, `ArticleResponse`), repository interface (`ArticlesRepository`), use cases (`GetArticleUseCase`) |
+| Data | `data/` | Implementations: remote (`ApiService`, `ApiException`, `HttpErrorCallAdapter`), local (`Room` entities, DAOs, `RemoteMediator`), repository impl (`DefaultArticlesRepository`), mappers |
+| UI | `ui/` | Theme, navigation, common (`UiState`), components, feature screens, previews |
+| DI | `di/` | Hilt modules for each layer |
+| Analytics | `analytics/` | Interface + Timber + Firebase + Composite pattern |
 
 ## Key characteristics
 

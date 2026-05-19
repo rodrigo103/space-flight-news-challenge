@@ -1,6 +1,6 @@
 package com.example.myandroidapp
 
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.domain.model.Article
 
 object TestArticleData {
     val article1 = Article(

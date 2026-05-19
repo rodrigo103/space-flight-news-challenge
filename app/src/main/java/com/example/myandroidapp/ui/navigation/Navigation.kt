@@ -1,4 +1,4 @@
-package com.example.myandroidapp
+package com.example.myandroidapp.ui.navigation
 
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -63,4 +63,3 @@ fun MainNavigation(
         }
     }
 }
-

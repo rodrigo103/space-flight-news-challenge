@@ -3,7 +3,7 @@ package com.example.myandroidapp.ui.articles.list
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.domain.model.Article
 
 @Stable
 interface ArticleCardSettings {

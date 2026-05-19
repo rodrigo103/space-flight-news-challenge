@@ -59,7 +59,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.myandroidapp.R
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.domain.model.Article
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

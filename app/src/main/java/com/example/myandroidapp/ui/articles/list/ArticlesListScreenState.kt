@@ -1,7 +1,7 @@
 package com.example.myandroidapp.ui.articles.list
 
 import androidx.paging.PagingData
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.domain.model.Article
 import kotlinx.coroutines.flow.Flow
 
 data class ArticlesListAttributes(

@@ -1,4 +1,4 @@
-package com.example.myandroidapp.data
+package com.example.myandroidapp.data.remote
 
 sealed class ApiException(
     message: String,

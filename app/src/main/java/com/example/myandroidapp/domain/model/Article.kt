@@ -1,4 +1,4 @@
-package com.example.myandroidapp.data
+package com.example.myandroidapp.domain.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

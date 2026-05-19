@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.ui.articles.list.ArticleCard
 import com.example.myandroidapp.ui.articles.list.ArticlesListActions
 import com.example.myandroidapp.ui.articles.list.ArticlesListAttributes

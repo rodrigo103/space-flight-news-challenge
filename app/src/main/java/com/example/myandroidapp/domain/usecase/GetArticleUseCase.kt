@@ -1,7 +1,7 @@
-package com.example.myandroidapp.data.usecase
+package com.example.myandroidapp.domain.usecase
 
-import com.example.myandroidapp.data.Article
-import com.example.myandroidapp.data.ArticlesRepository
+import com.example.myandroidapp.domain.model.Article
+import com.example.myandroidapp.domain.repository.ArticlesRepository
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import javax.inject.Inject

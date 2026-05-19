@@ -1,30 +1,21 @@
-package com.example.myandroidapp.data
+package com.example.myandroidapp.data.repository
 
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import com.example.myandroidapp.data.remote.ApiService
 import com.example.myandroidapp.data.local.ArticleDao
 import com.example.myandroidapp.data.local.ArticleRemoteMediator
-import com.example.myandroidapp.data.local.toArticle
+import com.example.myandroidapp.data.mappers.toArticle
+import com.example.myandroidapp.domain.model.Article
+import com.example.myandroidapp.domain.repository.ArticlesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
-
-interface ArticlesRepository {
-    suspend fun getArticles(limit: Int = 20, offset: Int = 0): Result<List<Article>>
-
-    suspend fun searchArticles(query: String, limit: Int = 20): Result<List<Article>>
-
-    suspend fun getArticle(id: Int): Result<Article>
-
-    suspend fun getCachedArticle(id: Int): Article?
-
-    fun getArticlesPaged(searchQuery: String? = null): Flow<PagingData<Article>>
-}
 
 @Singleton
 class DefaultArticlesRepository @Inject constructor(

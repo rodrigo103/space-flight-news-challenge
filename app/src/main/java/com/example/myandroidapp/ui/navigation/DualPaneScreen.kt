@@ -1,4 +1,4 @@
-package com.example.myandroidapp.ui
+package com.example.myandroidapp.ui.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +27,7 @@ import com.example.myandroidapp.ui.articles.list.ArticlesListActions
 import com.example.myandroidapp.ui.articles.list.ArticlesListAttributes
 import com.example.myandroidapp.ui.articles.list.ArticlesListScreen
 import com.example.myandroidapp.ui.articles.list.ArticlesListViewModel
+import com.example.myandroidapp.ui.common.UiState
 
 @Composable
 fun DualPaneScreen(

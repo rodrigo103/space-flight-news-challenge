@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.paging.PagingData
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.test.TestFixtures
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals

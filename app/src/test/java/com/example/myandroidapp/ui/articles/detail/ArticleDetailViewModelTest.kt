@@ -3,9 +3,9 @@ package com.example.myandroidapp.ui.articles.detail
 import androidx.lifecycle.SavedStateHandle
 import com.example.myandroidapp.TestArticleData
 import com.example.myandroidapp.analytics.AnalyticsHelper
-import com.example.myandroidapp.data.usecase.GetArticleUseCase
+import com.example.myandroidapp.domain.usecase.GetArticleUseCase
 import com.example.myandroidapp.test.MainDispatcherRule
-import com.example.myandroidapp.ui.UiState
+import com.example.myandroidapp.ui.common.UiState
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify

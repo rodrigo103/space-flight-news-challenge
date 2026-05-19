@@ -3,9 +3,9 @@ package com.example.myandroidapp.ui.articles.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.myandroidapp.data.Article
-import com.example.myandroidapp.data.usecase.GetArticleUseCase
-import com.example.myandroidapp.ui.UiState
+import com.example.myandroidapp.domain.model.Article
+import com.example.myandroidapp.domain.usecase.GetArticleUseCase
+import com.example.myandroidapp.ui.common.UiState
 import com.example.myandroidapp.analytics.AnalyticsHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

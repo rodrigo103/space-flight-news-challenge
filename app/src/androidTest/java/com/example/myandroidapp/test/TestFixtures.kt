@@ -1,6 +1,6 @@
 package com.example.myandroidapp.test
 
-import com.example.myandroidapp.data.Article
+import com.example.myandroidapp.domain.model.Article
 
 object TestFixtures {
     val article1 = Article(

@@ -2,7 +2,7 @@ package com.example.myandroidapp.ui.articles.list
 
 import androidx.paging.PagingData
 import com.example.myandroidapp.analytics.AnalyticsHelper
-import com.example.myandroidapp.data.ArticlesRepository
+import com.example.myandroidapp.domain.repository.ArticlesRepository
 import com.example.myandroidapp.test.MainDispatcherRule
 import io.mockk.every
 import io.mockk.mockk

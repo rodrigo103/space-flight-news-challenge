@@ -1,4 +1,4 @@
-package com.example.myandroidapp.ui
+package com.example.myandroidapp.ui.common
 
 sealed class UiState<out T> {
     data object Loading : UiState<Nothing>()
