@@ -1,5 +1,9 @@
 # Changelog del Wiki
 
+## 2026-05-19 (5)
+
+- Updated [[architecture/app-structure]] — Renombrado proyecto de `MyAndroidApp` a `MeliChallenge`
+
 ## 2026-05-19 (4)
 
 - Updated [[patterns/attributes-actions]] — Documentada limitación de Paging 3 en Compose Preview (`AndroidUiDispatcher.Main`), removidos previews de datos/vacío/búsqueda que no funcionaban, actualizado conteo a 3 previews (loading + cards).

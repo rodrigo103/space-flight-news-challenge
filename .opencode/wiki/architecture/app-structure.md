@@ -7,7 +7,7 @@ tags:
 
 > **Last verified:** 2026-05-19 | **Verified by:** [source] — removed `DataStoreModule`, `AppPreferences`, `preferences/` directory
 
-Estructura del módulo `:app` en el proyecto `MyAndroidApp`. App monomódulo con Jetpack Compose.
+Estructura del módulo `:app` en el proyecto `MeliChallenge`. App monomódulo con Jetpack Compose.
 
 ## Package structure
 
