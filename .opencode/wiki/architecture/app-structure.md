@@ -116,18 +116,79 @@ MeliChallenge/
 
 ## Modularization strategy
 
-The `:domain` extraction is the **first step** toward KMP and feature-based modularization:
+### Current state (incremental, 2 modules)
 
 ```
-Current (2 modules):  :domain ← :app
-Future (KMP ready):   :shared (domain+data+ui KMP) ← :androidApp / :iosApp
-Future (feature):     :domain ← :feature:articles ← :app
+:domain  ←  :app
 ```
 
-The `:domain` module has **zero Android dependencies**, making it reusable for:
-- KMP shared module (Kotlin Multiplatform)
-- Unit testing without Android runtime
-- Potential reuse in a backend Ktor module
+This is the **minimal viable modularization** that demonstrates separation of concerns at the Gradle level. `:domain` is pure Kotlin/JVM — it can be reused in a KMP shared module, backend Ktor service, or unit-tested without Android runtime.
+
+### Phase 2 — Feature-based (3+ modules)
+
+Split `:app` by feature when the app grows beyond ~3 screens:
+
+```
+:domain          ←  :feature:articles  ←  :app
+                  ←  :feature:search
+                  ←  :feature:settings
+                  ←  :core:ui           (design system, shared composables)
+                  ←  :core:network      (Retrofit, OkHttp)
+                  ←  :core:database     (Room)
+                  ←  :core:navigation   (Routes, navigator)
+```
+
+Each `:feature:*` module contains its own **domain + data + presentation** layers, making features self-contained and independently testable. `:core:*` modules hold cross-cutting infrastructure. `:app` becomes the shell — just `MainActivity`, `Application`, and DI wiring.
+
+### Phase 3 — KMP feature-based
+
+The endgame for multi-platform. Convert the feature modules to Kotlin Multiplatform:
+
+```
+:shared (KMP)
+ ├── :core
+ │    ├── :model           — Article.kt, DTOs (commonMain, zero deps)
+ │    ├── :network         — Ktor HttpClient + ApiService interface
+ │    ├── :database        — SQLDelight .sq files + DAOs
+ │    └── :ui              — Design system (Compose Multiplatform)
+ │
+ ├── :feature:articles
+ │    ├── :domain          — ArticlesRepository interface, GetArticlesUseCase
+ │    ├── :data            — Repository impl (Ktor + SQLDelight)
+ │    └── :ui              — ArticlesListScreen, ArticleDetailScreen (Compose MP)
+ │
+ └── :feature:search
+      └── ...
+
+:androidApp   ← MainActivity, platform DI, Firebase, SplashScreen
+:iosApp       ← SwiftUI entry point, platform DI
+```
+
+**Key differences between current (Android-pure) and KMP feature-based:**
+
+| Concept | Current | Feature-based KMP |
+|---|---|---|
+| DI | Hilt (Android-only) | Koin (KMP) or kotlin-inject |
+| HTTP | Retrofit + OkHttp | Ktor Client |
+| DB | Room | SQLDelight |
+| ViewModels | `androidx.lifecycle.ViewModel` | Plain class + `StateFlow` (StateHolder pattern) |
+| Navigation | Jetpack Navigation Compose | Custom navigator or Voyager |
+| Images | Coil | Coil MP or Kamel |
+| Analytics | Firebase | `expect/actual` (Firebase on Android, custom on iOS) |
+
+### Migration path
+
+```
+1. Extract :domain (current)
+2. Extract :core:model (:domain becomes split into model + repository interfaces)
+3. Introduce Ktor Client as alternative to Retrofit (feature-flagged)
+4. Extract :feature:articles (still Android-only, but self-contained)
+5. Convert :feature:articles to KMP (Ktor + SQLDelight + Compose MP)
+6. Add :iosApp entry point
+7. Repeat for remaining features
+```
+
+The first step (extract `:domain`) is the hardest because it creates the Gradle module boundary. Every subsequent extraction follows the same pattern and gets easier.
 
 ## App lifecycle
 
