@@ -1,4 +1,5 @@
 plugins {
+  id("jacoco")
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
@@ -22,16 +23,19 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+  compileOptions {
+      sourceCompatibility = JavaVersion.VERSION_17
+      targetCompatibility = JavaVersion.VERSION_17
+  }
     buildFeatures {
       compose = true
       aidl = false
@@ -62,7 +66,42 @@ sonarqube {
     property("sonar.projectKey", "rodrigo103_proyecto-android")
     property("sonar.organization", "rodrigo103")
     property("sonar.host.url", "https://sonarcloud.io")
+    property("sonar.coverage.jacoco.xmlReportPaths",
+      "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+    )
   }
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+  dependsOn("testDebugUnitTest")
+
+  reports {
+    xml.required = true
+    html.required = true
+  }
+
+  val debugClassesDir = "${project.layout.buildDirectory.get()}/intermediates/classes/debug/transformDebugClassesWithAsm/dirs"
+  val mainSrc = "${project.projectDir}/src/main/java"
+
+  sourceDirectories.setFrom(files(mainSrc))
+  classDirectories.setFrom(
+    fileTree(debugClassesDir) {
+      exclude(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/*Test*.*",
+        "**/*Preview*.*",
+        "**/*_Factory*",
+        "**/*_HiltModules*",
+        "**/Hilt_*",
+        "**/dagger/**",
+        "**/Dagger*.*",
+        "android/**",
+      )
+    }
+  )
+  executionData.setFrom(files("${project.layout.buildDirectory.get()}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"))
 }
 
 dependencies {
