@@ -65,6 +65,7 @@ sonarqube {
 }
 
 dependencies {
+  implementation(project(":domain"))
   implementation(libs.firebase.analytics)
     val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)

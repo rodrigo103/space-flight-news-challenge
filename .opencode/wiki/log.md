@@ -1,5 +1,18 @@
 # Changelog del Wiki
 
+## 2026-05-28
+
+- Modularización: extraído `:domain` como módulo Gradle independiente (Kotlin puro/JVM)
+  - **Nuevo módulo `:domain`** — `kotlin-jvm` + `kotlinx-serialization` + `coroutines-core` + `paging-common` + `javax.inject`
+  - **Movidos**: `domain/model/Article.kt`, `domain/repository/ArticlesRepository.kt`, `domain/usecase/GetArticleUseCase.kt`
+  - **Limpiado** `GetArticleUseCase` — removida dependencia de `Timber` (no es pure-Kotlin)
+  - **Eliminado** directorio `domain/` de `:app`
+  - **Agregado** `implementation(project(":domain"))` en `:app/build.gradle.kts`
+  - **TOML actualizado** — nuevas entries: plugin `kotlin-jvm`, libraries `kotlinx-coroutines-core`, `javax-inject`
+  - **Root build.gradle.kts** — registrado `kotlin-jvm` con `apply false`
+  - `assembleDebug`, `test`, `detekt` verificados — todo verde
+  - Actualizado [[architecture/app-structure]] — estructura bimódulo, tabla de capas con columna Module, nueva sección "Modularization strategy"
+
 ## 2026-05-19 (9)
 
 - Reorganización arquitectónica del proyecto en 3 capas (domain/data/ui)

@@ -3,7 +3,6 @@ package com.example.myandroidapp.domain.usecase
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.domain.repository.ArticlesRepository
 import kotlinx.coroutines.withTimeoutOrNull
-import timber.log.Timber
 import javax.inject.Inject
 
 class GetArticleUseCase @Inject constructor(
@@ -22,10 +21,7 @@ class GetArticleUseCase @Inject constructor(
         if (article != null) return Result.success(article)
 
         val cached = repository.getCachedArticle(articleId)
-        if (cached != null) {
-            Timber.d("Article %d loaded from cache", articleId)
-            return Result.success(cached)
-        }
+        if (cached != null) return Result.success(cached)
 
         return networkResult ?: Result.failure(Exception("Request timed out"))
     }

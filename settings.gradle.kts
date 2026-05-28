@@ -19,3 +19,4 @@ plugins {
 
 rootProject.name = "MeliChallenge"
 include(":app")
+include(":domain")

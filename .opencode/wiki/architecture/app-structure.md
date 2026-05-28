@@ -5,34 +5,42 @@ tags:
 
 # App Structure
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — reorganized into domain/data/ui layers, extracted mappers package
+> **Last verified:** 2026-05-28 | **Verified by:** [source] — extracted `:domain` as standalone Gradle module
 
-Estructura del módulo `:app` en el proyecto `MeliChallenge`. App monomódulo con Jetpack Compose, organizada en 3 capas (domain, data, ui) + di + analytics.
+Estructura del proyecto `MeliChallenge`. Proyecto **bimódulo** (`:app` + `:domain`) con Jetpack Compose, organizado en 3 capas (domain, data, ui) + di + analytics.
 
-## Package structure
+## Module structure
 
 ```
-com.example.myandroidapp/
-├── MyApplication.kt              # Hilt Application
-├── MainActivity.kt               # Entry point, setContent
+MeliChallenge/
+├── :domain/                        # Gradle module — pure Kotlin/JVM, KMP-ready
+│   └── build.gradle.kts            # kotlin-jvm + kotlinx.serialization + coroutines + paging-common + javax.inject
+├── :app/                           # Gradle module — Android app
+│   └── build.gradle.kts            # Depends on :domain
+│
+:domain/src/main/java/com/example/myandroidapp/
+└── domain/
+    ├── model/
+    │   └── Article.kt              # Domain model + ArticleResponse, Author, Socials
+    ├── repository/
+    │   └── ArticlesRepository.kt   # Repository interface
+    └── usecase/
+        └── GetArticleUseCase.kt    # Timeout + fetch article by ID (no Timber, no Android deps)
+
+:app/src/main/java/com/example/myandroidapp/
+├── MyApplication.kt                # Hilt Application
+├── MainActivity.kt                 # Entry point, setContent
 ├── di/
-│   ├── AppModule.kt              # Provider bindings (isDebug)
-│   ├── DispatcherModule.kt       # Coroutine dispatchers (IoDispatcher, DefaultDispatcher)
-│   ├── NetworkModule.kt          # OkHttp + Retrofit + HttpErrorCallAdapterFactory
-│   ├── DatabaseModule.kt         # Room database + DAO
-│   ├── RepositoryModule.kt       # Repository bindings
-│   └── AnalyticsModule.kt        # AnalyticsHelper binding
-├── domain/
-│   ├── model/
-│   │   └── Article.kt            # Domain model + ArticleResponse, Author, Socials
-│   ├── repository/
-│   │   └── ArticlesRepository.kt # Repository interface
-│   └── usecase/
-│       └── GetArticleUseCase.kt  # Timeout + fetch article by ID
+│   ├── AppModule.kt                # Provider bindings (isDebug)
+│   ├── DispatcherModule.kt         # Coroutine dispatchers (IoDispatcher, DefaultDispatcher)
+│   ├── NetworkModule.kt            # OkHttp + Retrofit + HttpErrorCallAdapterFactory
+│   ├── DatabaseModule.kt           # Room database + DAO
+│   ├── RepositoryModule.kt         # Repository bindings
+│   └── AnalyticsModule.kt          # AnalyticsHelper binding
 ├── data/
 │   ├── remote/
-│   │   ├── ApiService.kt         # Retrofit interface
-│   │   ├── ApiException.kt       # HTTP error sealed exception hierarchy
+│   │   ├── ApiService.kt           # Retrofit interface
+│   │   ├── ApiException.kt         # HTTP error sealed exception hierarchy
 │   │   └── HttpErrorCallAdapter.kt # CallAdapter.Factory
 │   ├── local/
 │   │   ├── AppDatabase.kt
@@ -42,7 +50,7 @@ com.example.myandroidapp/
 │   ├── repository/
 │   │   └── DefaultArticlesRepository.kt  # Repository implementation
 │   ├── mappers/
-│   │   └── ArticleMappers.kt      # Entity ↔ Domain mapping extensions
+│   │   └── ArticleMappers.kt        # Entity ↔ Domain mapping extensions
 │   └── connectivity/
 │       ├── ConnectivityStatus.kt    # Available / Unavailable enum
 │       └── ConnectivityObserver.kt  # Reactive network monitoring (callbackFlow)
@@ -86,22 +94,40 @@ com.example.myandroidapp/
 
 ## Layer separation
 
-| Layer | Package | Contents |
-|-------|---------|----------|
-| Domain | `domain/` | Models (`Article`, `ArticleResponse`), repository interface (`ArticlesRepository`), use cases (`GetArticleUseCase`) |
-| Data | `data/` | Implementations: remote (`ApiService`, `ApiException`, `HttpErrorCallAdapter`), local (`Room` entities, DAOs, `RemoteMediator`), repository impl (`DefaultArticlesRepository`), mappers |
-| UI | `ui/` | Theme, navigation, common (`UiState`), components, feature screens, previews |
-| DI | `di/` | Hilt modules for each layer |
-| Analytics | `analytics/` | Interface + Timber + Firebase + Composite pattern |
+| Layer | Module | Package | Contents |
+|-------|--------|---------|----------|
+| Domain | `:domain` | `domain/` | Models (`Article`, `ArticleResponse`), repository interface (`ArticlesRepository`), use cases (`GetArticleUseCase`) — pure Kotlin/JVM, KMP-ready |
+| Data | `:app` | `data/` | Implementations: remote (`ApiService`, `ApiException`, `HttpErrorCallAdapter`), local (`Room` entities, DAOs, `RemoteMediator`), repository impl (`DefaultArticlesRepository`), mappers |
+| UI | `:app` | `ui/` | Theme, navigation, common (`UiState`), components, feature screens, previews |
+| DI | `:app` | `di/` | Hilt modules for each layer |
+| Analytics | `:app` | `analytics/` | Interface + Timber + Firebase + Composite pattern |
 
 ## Key characteristics
 
-- Single module `:app`
+- **Two modules**: `:domain` (pure Kotlin/JVM) and `:app` (Android app)
+- `:domain` depends only on `kotlinx-serialization`, `kotlinx-coroutines-core`, `paging-common`, `javax.inject` — no Android, no Timber
+- `:app` depends on `:domain` via `implementation(project(":domain"))`
+- Hilt automatically injects domain classes (`GetArticleUseCase`, `ArticlesRepository`) into `:app` ViewModels
+- Same package names across modules — no import changes needed
 - Min SDK 24, Target SDK 36, Compile SDK 36
-- Kotlin 17 toolchain
-- 100% Kotlin (no Java)
+- Kotlin 17 toolchain (both modules)
 - Jetpack Compose + Material 3
 - Error handling automático via `CallAdapter.Factory` (no `Response<T>` manual checks)
+
+## Modularization strategy
+
+The `:domain` extraction is the **first step** toward KMP and feature-based modularization:
+
+```
+Current (2 modules):  :domain ← :app
+Future (KMP ready):   :shared (domain+data+ui KMP) ← :androidApp / :iosApp
+Future (feature):     :domain ← :feature:articles ← :app
+```
+
+The `:domain` module has **zero Android dependencies**, making it reusable for:
+- KMP shared module (Kotlin Multiplatform)
+- Unit testing without Android runtime
+- Potential reuse in a backend Ktor module
 
 ## App lifecycle
 
