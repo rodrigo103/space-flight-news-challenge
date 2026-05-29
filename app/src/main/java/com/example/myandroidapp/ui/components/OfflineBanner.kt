@@ -41,7 +41,7 @@ fun OfflineBanner(
         ) {
             Icon(
                 imageVector = Icons.Filled.SignalWifiOff,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.offline_banner),
                 tint = MaterialTheme.colorScheme.onErrorContainer,
             )
             Text(

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Search as SearchIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,6 +44,11 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,12 +58,10 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import androidx.compose.ui.res.stringResource
 import coil3.compose.AsyncImage
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.myandroidapp.R
 import com.example.myandroidapp.domain.model.Article
+import com.example.myandroidapp.ui.components.ShimmerArticleCard
+import com.example.myandroidapp.ui.components.ShimmerPage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +93,12 @@ fun ArticlesListScreen(
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.space_flight_news)) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.space_flight_news),
+                        modifier = Modifier.semantics { heading() },
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                 ),
@@ -105,18 +112,20 @@ fun ArticlesListScreen(
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             Column(modifier = Modifier.padding(padding)) {
+                val searchLabel = stringResource(R.string.search_articles)
                 OutlinedTextField(
                     value = attributes.searchQuery,
                     onValueChange = actions.onSearchTextChange,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text(stringResource(R.string.search_articles)) },
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .semantics { contentDescription = searchLabel },
+                    placeholder = { Text(searchLabel) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Search,
+                            imageVector = Icons.Default.SearchIcon,
                             contentDescription = stringResource(R.string.search),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -140,17 +149,7 @@ fun ArticlesListScreen(
                 when (val refreshState = articles.loadState.refresh) {
                     is LoadState.Loading -> {
                         if (articles.itemCount == 0) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.space_loading))
-                                LottieAnimation(
-                                    composition = composition,
-                                    modifier = Modifier.size(160.dp),
-                                    iterations = LottieConstants.IterateForever,
-                                )
-                            }
+                            ShimmerPage()
                         } else {
                             LazyColumn(
                                 contentPadding = PaddingValues(16.dp),
@@ -176,12 +175,7 @@ fun ArticlesListScreen(
                                     }
                                 }
                                 item {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                                    }
+                                    ShimmerArticleCard(modifier = Modifier.padding(vertical = 4.dp))
                                 }
                             }
                         }
@@ -232,12 +226,7 @@ fun ArticlesListScreen(
                                 }
                                 if (articles.loadState.append is LoadState.Loading) {
                                     item {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                                        }
+                                        ShimmerArticleCard(modifier = Modifier.padding(vertical = 4.dp))
                                     }
                                 }
                             }
@@ -282,12 +271,7 @@ fun ArticlesListScreen(
                                 }
                                 if (articles.loadState.append is LoadState.Loading) {
                                     item {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                                        }
+                                        ShimmerArticleCard(modifier = Modifier.padding(vertical = 4.dp))
                                     }
                                 }
                             }
@@ -332,6 +316,10 @@ internal fun ArticleCard(article: Article, onClick: () -> Unit, modifier: Modifi
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .semantics {
+                contentDescription = accessibilityDescription(article)
+                role = Role.Button
+            }
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
@@ -385,3 +373,13 @@ internal fun ArticleCard(article: Article, onClick: () -> Unit, modifier: Modifi
 }
 
 private const val DATE_LENGTH = 10
+
+private fun accessibilityDescription(article: Article): String = buildString {
+    append(article.title)
+    append(". ")
+    append(article.summary)
+    article.newsSite?.let {
+        append(". Source: ")
+        append(it)
+    }
+}
