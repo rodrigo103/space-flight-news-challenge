@@ -18,7 +18,7 @@ interface ArticleDao {
     @Query("SELECT * FROM articles ORDER BY published_at DESC")
     fun pagingSource(): PagingSource<Int, ArticleEntity>
 
-    @Query("SELECT * FROM articles WHERE title LIKE '%' || :query || '%' ORDER BY published_at DESC")
+    @Query("SELECT * FROM articles WHERE title LIKE '%' || :query || '%' OR summary LIKE '%' || :query || '%' ORDER BY published_at DESC")
     fun searchPagingSource(query: String): PagingSource<Int, ArticleEntity>
 
     @Query("SELECT * FROM articles WHERE id = :id")

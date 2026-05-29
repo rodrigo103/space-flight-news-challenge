@@ -15,6 +15,7 @@ import java.net.UnknownHostException
 class ArticleRemoteMediator(
     private val apiService: ApiService,
     private val articleDao: ArticleDao,
+    private val searchQuery: String? = null,
 ) : RemoteMediator<Int, ArticleEntity>() {
 
     override suspend fun load(
@@ -32,7 +33,7 @@ class ArticleRemoteMediator(
         }
 
         return try {
-            val response = apiService.getArticles(limit = PAGE_SIZE, offset = offset)
+            val response = apiService.getArticles(limit = PAGE_SIZE, offset = offset, search = searchQuery)
             val articles = response.results
             articleDao.insertAll(articles.map { it.toEntity() })
             MediatorResult.Success(endOfPaginationReached = articles.size < PAGE_SIZE)

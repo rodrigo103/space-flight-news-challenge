@@ -1,5 +1,14 @@
 # Changelog del Wiki
 
+## 2026-05-29
+
+- Search strategy: migrado de Option B (Room-only) a stale-while-revalidate (híbrido A+B)
+  - **`ArticleRemoteMediator`** — acepta `searchQuery: String?`, lo pasa a `apiService.getArticles(search = ...)`
+  - **`DefaultArticlesRepository.getArticlesPaged`** — eliminada rama `remoteMediator = null`; siempre se crea `ArticleRemoteMediator` con el query
+  - **`ArticleDao.searchPagingSource`** — extendido a buscar en `title` y `summary`
+  - Resultado: Room emite stale instantáneo, RemoteMediator refresca desde API en paralelo, offline fallback automático
+  - Actualizado [[patterns/search-strategy]] — nueva arquitectura, flujo de datos, tabla de archivos clave
+
 ## 2026-05-28
 
 - Modularización: extraído `:domain` como módulo Gradle independiente (Kotlin puro/JVM)

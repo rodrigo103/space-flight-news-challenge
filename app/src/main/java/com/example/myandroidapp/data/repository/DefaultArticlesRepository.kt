@@ -50,9 +50,7 @@ class DefaultArticlesRepository @Inject constructor(
     override fun getArticlesPaged(searchQuery: String?): Flow<PagingData<Article>> {
         return Pager(
             config = PagingConfig(pageSize = PAGE_SIZE, enablePlaceholders = false),
-            remoteMediator = if (searchQuery.isNullOrBlank()) {
-                ArticleRemoteMediator(apiService, articleDao)
-            } else null,
+            remoteMediator = ArticleRemoteMediator(apiService, articleDao, searchQuery?.ifBlank { null }),
             pagingSourceFactory = {
                 if (searchQuery.isNullOrBlank()) {
                     articleDao.pagingSource()

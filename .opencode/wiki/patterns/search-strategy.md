@@ -5,7 +5,7 @@ tags:
 
 # Search Strategy
 
-> **Last verified:** 2026-05-19 | **Verified by:** [analysis]
+> **Last verified:** 2026-05-29 | **Verified by:** [analysis]
 
 ## Contexto
 
@@ -39,22 +39,23 @@ Usuario escribe → Pager SIN RemoteMediator → Room PagingSource con WHERE/LIK
 **Pros:** Sin HTTP requests, sin problemas de cancelación, funciona offline, instantáneo.
 **Contras:** Solo busca entre artículos ya cacheados en Room.
 
-## Decisión: Opción B
+## Decisión: Stale-While-Revalidate (híbrido A + B)
 
-**Búsqueda local contra Room por estabilidad y simplicidad.**
+**Siempre se usa RemoteMediator con `searchQuery`. Room emite resultados stale instantáneos mientras la API refresca en paralelo.**
 
 ### Arquitectura resultante
 
 ```
 Normal (sin búsqueda):
-  Pager(remoteMediator = ArticleRemoteMediator, pagingSource = articleDao.pagingSource())
+  Pager(remoteMediator = ArticleRemoteMediator(searchQuery = null), pagingSource = articleDao.pagingSource())
     → RemoteMediator llama API sin ?search=, guarda en Room
     → PagingSource lee de Room
 
 Búsqueda (con query):
-  Pager(remoteMediator = null, pagingSource = articleDao.searchPagingSource(query))
-    → Sin RemoteMediator (no HTTP)
-    → Room filtra localmente con LIKE %query%
+  Pager(remoteMediator = ArticleRemoteMediator(searchQuery = "mars"), pagingSource = articleDao.searchPagingSource("mars"))
+    → searchPagingSource emite resultados stale de Room instantáneamente
+    → RemoteMediator llama API con ?search=mars en paralelo, guarda en Room
+    → Room invalida PagingSource → re-emite datos frescos
 ```
 
 ### Flujo de datos
@@ -62,30 +63,28 @@ Búsqueda (con query):
 ```
 Usuario typea "mars"
   → _searchQuery.value = "mars"
-  → flatMapLatest → repository.getArticlesPaged("mars")
-  → Pager(remoteMediator = null, pagingSource = articleDao.searchPagingSource("mars"))
-  → SELECT * FROM articles WHERE title LIKE '%mars%' OR summary LIKE '%mars%'
+  → debounce 300ms → flatMapLatest → repository.getArticlesPaged("mars")
+  → Pager(remoteMediator = ArticleRemoteMediator(searchQuery = "mars"), pagingSource = dao.searchPagingSource("mars"))
+  → 1️⃣ Room emite local: SELECT * FROM articles WHERE title LIKE '%mars%' OR summary LIKE '%mars%'
+  → 2️⃣ RemoteMediator.load() → GET /articles?search=mars → insertAll() → Room invalida → re-emite
   → Flow<PagingData<Article>> → collectAsLazyPagingItems()
 ```
 
-### Tradeoff aceptado
+### Ventajas del enfoque
 
-La búsqueda solo encuentra artículos que ya están en Room. Esto es aceptable porque:
+1. **Resultados instantáneos** — Room emite datos cacheados mientras la API carga
+2. **Resultados completos** — la API trae artículos que no están en Room
+3. **Funciona offline** — si la red falla, RemoteMediator devuelve `Success(false)` y el usuario se queda con los resultados de Room
+4. **Sin problemas de cancelación** — `CancellationException` se relanza correctamente en RemoteMediator
+5. **Stale-while-revalidate es nativo de Paging 3** — PagingSource emite stale, RemoteMediator refresca, Room notifica cambios automáticamente
 
-1. RemoteMediator carga páginas continuamente mientras el usuario scrollea
-2. Room acumula artículos vistos
-3. La experiencia de búsqueda es instantánea y sin errores
-4. Se prioriza estabilidad y experiencia offline sobre completitud de resultados
+### Archivos clave
 
-### Fallback híbrido futuro
-
-```kotlin
-fun search(query: String): Flow<PagingData<Article>> {
-    val local = searchLocal(query)    // Room
-    if (local.count() > 0) return local
-    return searchRemote(query)         // API ?search=
-}
-```
+| Archivo | Rol |
+|---------|-----|
+| `ArticleRemoteMediator.kt` | Constructor acepta `searchQuery: String?`, lo pasa a `apiService.getArticles(search = ...)` |
+| `DefaultArticlesRepository.kt:53` | Siempre crea `ArticleRemoteMediator` con `searchQuery?.ifBlank { null }` |
+| `ArticleDao.kt:21` | `searchPagingSource` busca en `title` y `summary` con `LIKE` |
 
 ## Ver también
 
