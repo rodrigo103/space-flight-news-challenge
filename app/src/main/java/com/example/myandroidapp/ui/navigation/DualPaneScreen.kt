@@ -14,13 +14,13 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.myandroidapp.R
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.myandroidapp.R
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailPaneViewModel
 import com.example.myandroidapp.ui.articles.detail.articleDetailContentSettings
 import com.example.myandroidapp.ui.articles.list.ArticlesListActions
@@ -41,7 +41,9 @@ fun DualPaneScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.weight(1f)) {
-            Box(modifier = Modifier.weight(LIST_WEIGHT).fillMaxSize()) {
+            Box(modifier = Modifier
+                .weight(LIST_WEIGHT)
+                .fillMaxSize()) {
                 ArticlesListScreen(
                     attributes = ArticlesListAttributes(
                         searchQuery = searchQuery,
@@ -57,7 +59,9 @@ fun DualPaneScreen(
                 )
             }
             VerticalDivider(modifier = Modifier.fillMaxHeight())
-            Box(modifier = Modifier.weight(DETAIL_WEIGHT).fillMaxSize()) {
+            Box(modifier = Modifier
+                .weight(DETAIL_WEIGHT)
+                .fillMaxSize()) {
                 DetailPane(
                     articleId = selectedArticleId,
                     viewModel = detailViewModel,
@@ -115,7 +119,8 @@ private fun DetailPane(
             }
 
             is UiState.Success -> articleDetailContentSettings(
-                article = s.data.article)()
+                article = s.data.article
+            )()
         }
     }
 }

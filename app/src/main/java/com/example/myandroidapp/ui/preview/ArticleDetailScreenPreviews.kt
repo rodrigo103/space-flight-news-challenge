@@ -4,11 +4,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.myandroidapp.domain.model.Article
-import com.example.myandroidapp.ui.common.UiState
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailActions
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailAttributes
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailScreen
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailState
+import com.example.myandroidapp.ui.common.UiState
 
 private val detailArticle = Article(
     id = 1,

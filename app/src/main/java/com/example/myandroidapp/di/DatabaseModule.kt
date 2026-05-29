@@ -2,8 +2,8 @@ package com.example.myandroidapp.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.myandroidapp.data.local.ArticleDao
 import com.example.myandroidapp.data.local.AppDatabase
+import com.example.myandroidapp.data.local.ArticleDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

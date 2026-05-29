@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -43,7 +44,6 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.myandroidapp.R
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.ui.common.UiState
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +59,10 @@ fun ArticleDetailScreen(
                 title = { Text(stringResource(R.string.article_details)) },
                 navigationIcon = {
                     IconButton(onClick = actions.onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
                     }
                 },
             )
@@ -148,7 +151,9 @@ internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifie
         if (article.authors.isNotEmpty()) {
             val unknown = stringResource(R.string.unknown)
             Text(
-                text = stringResource(R.string.by_author, article.authors.joinToString(", ") { it.name ?: unknown }),
+                text = stringResource(
+                    R.string.by_author,
+                    article.authors.joinToString(", ") { it.name ?: unknown }),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -187,7 +192,10 @@ internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifie
                 val intent = Intent(Intent.ACTION_VIEW, article.url.toUri())
                 context.startActivity(intent)
             }) {
-                Icon(Icons.Default.OpenInBrowser, contentDescription = stringResource(R.string.open_in_browser))
+                Icon(
+                    Icons.Default.OpenInBrowser,
+                    contentDescription = stringResource(R.string.open_in_browser)
+                )
             }
         }
     }

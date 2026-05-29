@@ -27,7 +27,11 @@ class HttpErrorCallAdapterTest {
     @Test
     fun `factory returns null for non-Call return type`() {
         val adapter = HttpErrorCallAdapterFactory()
-            .get(String::class.java, emptyArray(), Retrofit.Builder().baseUrl("http://localhost/").build())
+            .get(
+                String::class.java,
+                emptyArray(),
+                Retrofit.Builder().baseUrl("http://localhost/").build()
+            )
 
         assertNull(adapter)
     }

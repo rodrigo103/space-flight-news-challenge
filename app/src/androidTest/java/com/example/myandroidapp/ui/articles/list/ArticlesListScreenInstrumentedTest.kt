@@ -3,8 +3,8 @@ package com.example.myandroidapp.ui.articles.list
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -14,7 +14,6 @@ import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.test.TestFixtures
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 

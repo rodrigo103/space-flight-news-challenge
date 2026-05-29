@@ -19,10 +19,12 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideJson(): Json = Json { ignoreUnknownKeys = true }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideOkHttpClient(@Named("isDebug") isDebug: Boolean): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (isDebug) HttpLoggingInterceptor.Level.BODY
@@ -33,7 +35,8 @@ object NetworkModule {
             .build()
     }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideRetrofit(json: Json, client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl("https://api.spaceflightnewsapi.net/v4/")
@@ -43,7 +46,8 @@ object NetworkModule {
             .build()
     }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService {
         return retrofit.create(ApiService::class.java)
     }

@@ -58,7 +58,10 @@ fun shimmerBrush(): Brush {
     )
     return Brush.linearGradient(
         colors = shimmerColors,
-        start = Offset(translateAnimation - SHIMMER_GRADIENT_WIDTH, translateAnimation - SHIMMER_GRADIENT_WIDTH),
+        start = Offset(
+            translateAnimation - SHIMMER_GRADIENT_WIDTH,
+            translateAnimation - SHIMMER_GRADIENT_WIDTH
+        ),
         end = Offset(translateAnimation, translateAnimation),
     )
 }
@@ -78,7 +81,10 @@ fun ShimmerArticleCard(modifier: Modifier = Modifier) {
                     .background(brush),
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(TITLE_WIDTH_RATIO)

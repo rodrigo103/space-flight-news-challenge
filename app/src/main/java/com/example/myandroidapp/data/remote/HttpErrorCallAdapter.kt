@@ -71,7 +71,13 @@ private class HttpErrorCall<T>(
 
     private fun buildErrorMessage(response: Response<*>, errorBody: ResponseBody?): String {
         val details = errorBody?.let {
-            try { it.string() } catch (e: CancellationException) { throw e } catch (_: IOException) { null }
+            try {
+                it.string()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: IOException) {
+                null
+            }
         } ?: response.message()
         return "HTTP ${response.code()}: $details"
     }

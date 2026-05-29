@@ -133,7 +133,7 @@ exceptions:
     active: true
   ThrowingExceptionsWithoutMessageOrCause:
     active: true
-    excludes: ['**/test/**', '**/androidTest/**']
+    excludes: [ '**/test/**', '**/androidTest/**' ]
   TooGenericExceptionCaught:
     active: true
   TooGenericExceptionThrown:
@@ -344,7 +344,7 @@ style:
   UnusedPrivateMember:
     active: true
     allowedNames: ''
-    excludes: ['**/preview/**', '**/theme/**']
+    excludes: [ '**/preview/**', '**/theme/**' ]
   UnusedPrivateProperty:
     active: true
   UseAnyOrNoneInsteadOfFind:

@@ -94,7 +94,8 @@ class ApiServiceTest {
 
     @Test
     fun `getArticles handles null fields gracefully`() = runTest {
-        serverRule.enqueueJson(200, """
+        serverRule.enqueueJson(
+            200, """
             {
               "count": 1,
               "next": null,
@@ -112,7 +113,8 @@ class ApiServiceTest {
                 }
               ]
             }
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         val article = createApi().getArticles().results[0]
 

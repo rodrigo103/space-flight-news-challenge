@@ -3,10 +3,10 @@ package com.example.myandroidapp.ui.articles.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.domain.usecase.GetArticleUseCase
 import com.example.myandroidapp.ui.common.UiState
-import com.example.myandroidapp.analytics.AnalyticsHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +26,8 @@ class ArticleDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val articleId: Int = checkNotNull(savedStateHandle["articleId"]) { "articleId required" }
+    private val articleId: Int =
+        checkNotNull(savedStateHandle["articleId"]) { "articleId required" }
 
     private val _uiState = MutableStateFlow<UiState<ArticleDetailState>>(UiState.Loading)
     val uiState: StateFlow<UiState<ArticleDetailState>> = _uiState.asStateFlow()

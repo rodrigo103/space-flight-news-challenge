@@ -1,7 +1,6 @@
 package com.example.myandroidapp.ui.articles.list
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,8 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,15 +30,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search as SearchIcon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +42,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -56,12 +55,12 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import androidx.compose.ui.res.stringResource
 import coil3.compose.AsyncImage
 import com.example.myandroidapp.R
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.ui.components.ShimmerArticleCard
 import com.example.myandroidapp.ui.components.ShimmerPage
+import androidx.compose.material.icons.filled.Search as SearchIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,7 +188,8 @@ fun ArticlesListScreen(
                                 verticalArrangement = Arrangement.Center,
                             ) {
                                 Text(
-                                    text = refreshState.error.message ?: stringResource(R.string.unknown_error),
+                                    text = refreshState.error.message
+                                        ?: stringResource(R.string.unknown_error),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.error,
                                 )
@@ -240,7 +240,9 @@ fun ArticlesListScreen(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = if (attributes.searchQuery.isNotEmpty()) stringResource(R.string.no_results_found) else stringResource(R.string.no_articles_available),
+                                    text = if (attributes.searchQuery.isNotEmpty()) stringResource(R.string.no_results_found) else stringResource(
+                                        R.string.no_articles_available
+                                    ),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )

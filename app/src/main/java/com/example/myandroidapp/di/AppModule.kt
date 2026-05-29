@@ -12,7 +12,8 @@ import javax.inject.Named
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    @Provides @Named("isDebug")
+    @Provides
+    @Named("isDebug")
     fun provideIsDebug(app: Application): Boolean {
         return app.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
