@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">MeliChallenge</string>
+    <string name="space_flight_news">Noticias Espaciales</string>
+    <string name="search_articles">Buscar artículos…</string>
+    <string name="search">Buscar</string>
+    <string name="clear_search">Limpiar búsqueda</string>
+    <string name="no_results_found">Sin resultados</string>
+    <string name="no_articles_available">No hay artículos disponibles</string>
+    <string name="retry">Reintentar</string>
+    <string name="unknown_error">Error desconocido</string>
+    <string name="unknown">Desconocido</string>
+    <string name="article_details">Detalle del artículo</string>
+    <string name="back">Volver</string>
+    <string name="by_author">Por %1$s</string>
+    <string name="published_at">Publicado: %1$s</string>
+    <string name="open_in_browser">Abrir en navegador</string>
+    <string name="select_an_article">Seleccioná un artículo</string>
+    <string name="offline_banner">Sin conexión — mostrando datos guardados</string>
+</resources>
