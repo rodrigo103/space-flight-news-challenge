@@ -21,6 +21,7 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 
 - [[patterns/attributes-actions]] — Attributes/Actions pattern + previews
 - [[patterns/mvvm-repository]] — MVVM + Repository pattern
+- [[patterns/mvi-migration]] — Plan de migración MVVM → MVI (completo + Lite)
 - [[patterns/error-handling]] — Manejo de errores con Result + UiState + CallAdapter
 - [[patterns/room-paging]] — Room + Paging 3 + RemoteMediator
 - [[patterns/search-strategy]] — Búsqueda local vs API: decisión arquitectónica

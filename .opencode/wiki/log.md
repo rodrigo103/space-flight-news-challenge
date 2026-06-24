@@ -20,6 +20,13 @@
   - Resultado: Room emite stale instantáneo, RemoteMediator refresca desde API en paralelo, offline fallback automático
   - Actualizado [[patterns/search-strategy]] — nueva arquitectura, flujo de datos, tabla de archivos clave
 
+- Creada [[patterns/mvi-migration]] — plan de migración MVVM → MVI, archivo por archivo
+  - **MVI completo** — `sealed interface Event`, `StateFlow<ScreenState>` unificado, `Channel<SideEffect>`, `fun onEvent(Event)` como único entry point
+  - **MVI Lite** (recomendado) — solo side effects canalizados, mantiene Attributes/Actions y MutableStateFlow separados
+  - Cubre los 10 archivos del feature list + detail + DualPaneScreen + ResponsiveApp
+  - Incluye antes/después de cada archivo, tabla comparativa de las 3 opciones, beneficios, riesgos y recomendación por tamaño de proyecto
+  - [[index]] actualizado con link a la nueva página
+
 ## 2026-05-28
 
 - Modularización: extraído `:domain` como módulo Gradle independiente (Kotlin puro/JVM)
