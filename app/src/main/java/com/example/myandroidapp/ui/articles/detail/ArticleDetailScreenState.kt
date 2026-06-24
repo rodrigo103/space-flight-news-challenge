@@ -10,3 +10,7 @@ data class ArticleDetailActions(
     val onBack: () -> Unit,
     val onRetry: () -> Unit = {},
 )
+
+sealed interface ArticleDetailSideEffect {
+    data object NavigateBack : ArticleDetailSideEffect
+}

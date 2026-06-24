@@ -1,6 +1,7 @@
 package com.example.myandroidapp.ui.articles.list
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -8,11 +9,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun ArticlesListScreenRoute(
-    onArticleClick: (Int) -> Unit,
+    onNavigateToDetail: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ArticlesListViewModel = hiltViewModel(),
 ) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.sideEffects.collect { effect ->
+            when (effect) {
+                is ArticlesListSideEffect.NavigateToDetail ->
+                    onNavigateToDetail(effect.articleId)
+            }
+        }
+    }
 
     ArticlesListScreen(
         attributes = ArticlesListAttributes(
@@ -22,7 +32,7 @@ fun ArticlesListScreenRoute(
         actions = ArticlesListActions(
             onSearchTextChange = viewModel::onSearchTextChange,
             onClearSearch = viewModel::clearSearch,
-            onArticleClick = onArticleClick,
+            onArticleClick = viewModel::onArticleClicked,
             sendAnalytics = viewModel::sendAnalytics,
         ),
         modifier = modifier,

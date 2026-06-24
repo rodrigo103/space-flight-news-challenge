@@ -164,10 +164,6 @@ fun ArticlesListScreen(
                                         articleCardSettings(
                                             article = article,
                                             onClick = {
-                                                actions.sendAnalytics(
-                                                    "article_selected",
-                                                    mapOf("id" to article.id.toString()),
-                                                )
                                                 actions.onArticleClick(article.id)
                                             },
                                         )()
@@ -215,10 +211,6 @@ fun ArticlesListScreen(
                                         articleCardSettings(
                                             article = article,
                                             onClick = {
-                                                actions.sendAnalytics(
-                                                    "article_selected",
-                                                    mapOf("id" to article.id.toString()),
-                                                )
                                                 actions.onArticleClick(article.id)
                                             },
                                         )()
@@ -262,10 +254,6 @@ fun ArticlesListScreen(
                                         articleCardSettings(
                                             article = article,
                                             onClick = {
-                                                actions.sendAnalytics(
-                                                    "article_selected",
-                                                    mapOf("id" to article.id.toString()),
-                                                )
                                                 actions.onArticleClick(article.id)
                                             },
                                         )()

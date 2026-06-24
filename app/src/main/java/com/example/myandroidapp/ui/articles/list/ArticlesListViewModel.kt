@@ -10,12 +10,15 @@ import com.example.myandroidapp.domain.repository.ArticlesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,6 +29,9 @@ class ArticlesListViewModel @Inject constructor(
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _sideEffects = Channel<ArticlesListSideEffect>(Channel.BUFFERED)
+    val sideEffects: Flow<ArticlesListSideEffect> = _sideEffects.receiveAsFlow()
 
     init {
         analytics.logScreenView("ArticlesList")
@@ -49,5 +55,15 @@ class ArticlesListViewModel @Inject constructor(
 
     fun sendAnalytics(event: String, properties: Map<String, String>) {
         analytics.logEvent(event, properties)
+    }
+
+    fun onArticleClicked(articleId: Int) {
+        analytics.logEvent(
+            "article_selected",
+            mapOf("id" to articleId.toString()),
+        )
+        viewModelScope.launch {
+            _sideEffects.send(ArticlesListSideEffect.NavigateToDetail(articleId))
+        }
     }
 }

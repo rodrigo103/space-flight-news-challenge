@@ -15,3 +15,7 @@ data class ArticlesListActions(
     val onArticleClick: (Int) -> Unit,
     val sendAnalytics: (String, Map<String, String>) -> Unit,
 )
+
+sealed interface ArticlesListSideEffect {
+    data class NavigateToDetail(val articleId: Int) : ArticlesListSideEffect
+}

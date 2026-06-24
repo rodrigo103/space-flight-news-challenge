@@ -52,7 +52,7 @@ fun DualPaneScreen(
                     actions = ArticlesListActions(
                         onSearchTextChange = listViewModel::onSearchTextChange,
                         onClearSearch = listViewModel::clearSearch,
-                        onArticleClick = onArticleSelected,
+                        onArticleClick = listViewModel::onArticleClicked,
                         sendAnalytics = listViewModel::sendAnalytics,
                     ),
                     modifier = Modifier.fillMaxSize(),
@@ -111,7 +111,7 @@ private fun DetailPane(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     androidx.compose.material3.Button(
-                        onClick = { viewModel.loadArticle(articleId) }
+                        onClick = { viewModel.loadArticle(articleId) },
                     ) {
                         Text(stringResource(R.string.retry))
                     }
@@ -119,7 +119,7 @@ private fun DetailPane(
             }
 
             is UiState.Success -> articleDetailContentSettings(
-                article = s.data.article
+                article = s.data.article,
             )()
         }
     }
