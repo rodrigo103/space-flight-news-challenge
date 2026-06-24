@@ -2,6 +2,17 @@
 
 ## 2026-05-29
 
+- Creada [[patterns/secure-coding]] — guía completa de secure coding basada en análisis de repos Ualá
+  - **AES/CBC/PKCS7** — encriptación del PIN en AndroidKeyStore con `setUserAuthenticationRequired`
+  - **SHA-256** — RSA-OAEP-SHA256 para datos al backend + hashing de deviceId (migrado de SHA-1)
+  - **TLS / Network Security Config** — solo system CAs en release, TLS 1.2+ para Auth0
+  - **ProGuard/R8** — ofuscación en release con 188 keep rules (SQLCipher, Retrofit, kotlinx.serialization, OkHttp)
+  - **EncryptedSharedPrefs + SQLCipher** — triple capa: Keystore → EncryptedSharedPrefs (AES-256-GCM) → SQLCipher (AES-256 SQLite)
+  - **Root Detection** — RootBeer en onboarding, bloquea biometría si detecta root
+  - **BiometricPrompt + CryptoObject** — `BIOMETRIC_STRONG` + binding criptográfico vía TEE
+  - Incluye explicaciones de cada tradeoff (CBC vs GCM, SHA-256 vs SHA-1, SIV vs GCM para keys)
+  - [[index]] actualizado con link a la nueva página
+
 - Search strategy: migrado de Option B (Room-only) a stale-while-revalidate (híbrido A+B)
   - **`ArticleRemoteMediator`** — acepta `searchQuery: String?`, lo pasa a `apiService.getArticles(search = ...)`
   - **`DefaultArticlesRepository.getArticlesPaged`** — eliminada rama `remoteMediator = null`; siempre se crea `ArticleRemoteMediator` con el query

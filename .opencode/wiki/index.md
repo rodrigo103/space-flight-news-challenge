@@ -24,6 +24,7 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 - [[patterns/error-handling]] — Manejo de errores con Result + UiState + CallAdapter
 - [[patterns/room-paging]] — Room + Paging 3 + RemoteMediator
 - [[patterns/search-strategy]] — Búsqueda local vs API: decisión arquitectónica
+- [[patterns/secure-coding]] — Secure coding: AES/CBC, SHA-256, TLS, ofuscación, almacenamiento encriptado
 - [[patterns/settings-composable]] — Settings + Composable pattern
 - [[patterns/analytics-composite]] — Analytics con Composite Pattern (Firebase + Timber)
 
