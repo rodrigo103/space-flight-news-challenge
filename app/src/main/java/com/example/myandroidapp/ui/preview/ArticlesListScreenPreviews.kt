@@ -1,5 +1,6 @@
 package com.example.myandroidapp.ui.preview
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -10,12 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.ui.articles.list.ArticleCard
-import com.example.myandroidapp.ui.articles.list.ArticlesListActions
-import com.example.myandroidapp.ui.articles.list.ArticlesListAttributes
 import com.example.myandroidapp.ui.articles.list.ArticlesListScreen
-import kotlinx.coroutines.flow.flow
+import com.example.myandroidapp.ui.articles.list.ArticlesListState
+import kotlinx.coroutines.flow.flowOf
 
 private val sampleArticles = listOf(
     Article(
@@ -50,28 +52,19 @@ private val sampleArticles = listOf(
     ),
 )
 
-private val dummyActions = ArticlesListActions(
-    onSearchTextChange = {},
-    onClearSearch = {},
-    onArticleClick = {},
-    sendAnalytics = { _, _ -> },
-)
-
 @Preview(showBackground = true)
 @Composable
 private fun ArticlesListScreenLoadingPreview() {
     MaterialTheme {
         ArticlesListScreen(
-            attributes = ArticlesListAttributes(
+            state = ArticlesListState(
                 searchQuery = "",
-                articles = flow { },
+                articles = null,
             ),
-            actions = dummyActions,
+            onEvent = {},
         )
     }
 }
-
-// --- Card previews ---
 
 @PreviewLightDark
 @Composable
@@ -86,7 +79,7 @@ private fun ArticleCardPreview() {
     }
 }
 
-@Preview(showSystemUi = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_NO)
+@Preview(showSystemUi = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
 private fun ArticleCardFullScreenPreview() {
     MaterialTheme {

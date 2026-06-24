@@ -48,8 +48,8 @@ import com.example.myandroidapp.ui.common.UiState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleDetailScreen(
-    attributes: ArticleDetailAttributes,
-    actions: ArticleDetailActions,
+    state: UiState<ArticleDetailState>,
+    onEvent: (ArticleDetailEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -58,17 +58,17 @@ fun ArticleDetailScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.article_details)) },
                 navigationIcon = {
-                    IconButton(onClick = actions.onBack) {
+                    IconButton(onClick = { onEvent(ArticleDetailEvent.Back) }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
             )
         },
     ) { padding ->
-        when (val current = attributes.state) {
+        when (val current = state) {
             is UiState.Loading -> {
                 Box(
                     modifier = Modifier
@@ -76,7 +76,9 @@ fun ArticleDetailScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.space_loading))
+                    val composition by rememberLottieComposition(
+                        LottieCompositionSpec.RawRes(R.raw.space_loading),
+                    )
                     LottieAnimation(
                         composition = composition,
                         modifier = Modifier.size(160.dp),
@@ -99,7 +101,9 @@ fun ArticleDetailScreen(
                             color = MaterialTheme.colorScheme.error,
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.material3.Button(onClick = actions.onRetry) {
+                        androidx.compose.material3.Button(
+                            onClick = { onEvent(ArticleDetailEvent.Retry) },
+                        ) {
                             Text(stringResource(R.string.retry))
                         }
                     }
@@ -153,7 +157,8 @@ internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifie
             Text(
                 text = stringResource(
                     R.string.by_author,
-                    article.authors.joinToString(", ") { it.name ?: unknown }),
+                    article.authors.joinToString(", ") { it.name ?: unknown },
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -194,7 +199,7 @@ internal fun ArticleDetailContent(article: Article, modifier: Modifier = Modifie
             }) {
                 Icon(
                     Icons.Default.OpenInBrowser,
-                    contentDescription = stringResource(R.string.open_in_browser)
+                    contentDescription = stringResource(R.string.open_in_browser),
                 )
             }
         }

@@ -4,14 +4,17 @@ import androidx.paging.PagingData
 import com.example.myandroidapp.domain.model.Article
 import kotlinx.coroutines.flow.Flow
 
-data class ArticlesListAttributes(
-    val searchQuery: String,
-    val articles: Flow<PagingData<Article>>,
+data class ArticlesListState(
+    val searchQuery: String = "",
+    val articles: Flow<PagingData<Article>>? = null,
 )
 
-data class ArticlesListActions(
-    val onSearchTextChange: (String) -> Unit,
-    val onClearSearch: () -> Unit,
-    val onArticleClick: (Int) -> Unit,
-    val sendAnalytics: (String, Map<String, String>) -> Unit,
-)
+sealed interface ArticlesListEvent {
+    data class SearchQueryChanged(val query: String) : ArticlesListEvent
+    data object ClearSearch : ArticlesListEvent
+    data class ArticleClicked(val articleId: Int) : ArticlesListEvent
+}
+
+sealed interface ArticlesListSideEffect {
+    data class NavigateToDetail(val articleId: Int) : ArticlesListSideEffect
+}

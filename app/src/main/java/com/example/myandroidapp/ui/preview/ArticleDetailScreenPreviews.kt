@@ -4,8 +4,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.myandroidapp.domain.model.Article
-import com.example.myandroidapp.ui.articles.detail.ArticleDetailActions
-import com.example.myandroidapp.ui.articles.detail.ArticleDetailAttributes
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailScreen
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailState
 import com.example.myandroidapp.ui.common.UiState
@@ -21,21 +19,13 @@ private val detailArticle = Article(
     authors = emptyList(),
 )
 
-private val dummyActions = ArticleDetailActions(
-    onBack = {},
-)
-
-// --- States ---
-
 @Preview(showBackground = true)
 @Composable
 private fun ArticleDetailScreenLoadingPreview() {
     MaterialTheme {
         ArticleDetailScreen(
-            attributes = ArticleDetailAttributes(
-                state = UiState.Loading,
-            ),
-            actions = dummyActions,
+            state = UiState.Loading,
+            onEvent = {},
         )
     }
 }
@@ -45,10 +35,8 @@ private fun ArticleDetailScreenLoadingPreview() {
 private fun ArticleDetailScreenSuccessPreview() {
     MaterialTheme {
         ArticleDetailScreen(
-            attributes = ArticleDetailAttributes(
-                state = UiState.Success(ArticleDetailState(article = detailArticle)),
-            ),
-            actions = dummyActions,
+            state = UiState.Success(ArticleDetailState(article = detailArticle)),
+            onEvent = {},
         )
     }
 }
@@ -58,10 +46,8 @@ private fun ArticleDetailScreenSuccessPreview() {
 private fun ArticleDetailScreenErrorPreview() {
     MaterialTheme {
         ArticleDetailScreen(
-            attributes = ArticleDetailAttributes(
-                state = UiState.Error("Unable to load article. Check your connection."),
-            ),
-            actions = dummyActions,
+            state = UiState.Error("Unable to load article. Check your connection."),
+            onEvent = {},
         )
     }
 }

@@ -2,11 +2,11 @@ package com.example.myandroidapp.ui.articles.detail
 
 import com.example.myandroidapp.ui.common.UiState
 
-data class ArticleDetailAttributes(
-    val state: UiState<ArticleDetailState>,
-)
+sealed interface ArticleDetailEvent {
+    data object Retry : ArticleDetailEvent
+    data object Back : ArticleDetailEvent
+}
 
-data class ArticleDetailActions(
-    val onBack: () -> Unit,
-    val onRetry: () -> Unit = {},
-)
+sealed interface ArticleDetailSideEffect {
+    data object NavigateBack : ArticleDetailSideEffect
+}

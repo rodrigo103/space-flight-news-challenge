@@ -37,7 +37,7 @@ fun MainNavigation(
             }
         ) {
             ArticlesListScreenRoute(
-                onArticleClick = { articleId ->
+                onNavigateToDetail = { articleId ->
                     onArticleSelected(articleId)
                     navController.navigate(DetailRoute(articleId))
                 }

@@ -65,13 +65,54 @@ import androidx.compose.material.icons.filled.Search as SearchIcon
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticlesListScreen(
-    attributes: ArticlesListAttributes,
-    actions: ArticlesListActions,
+    state: ArticlesListState,
+    onEvent: (ArticlesListEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val articles = attributes.articles.collectAsLazyPagingItems()
+    val articlesFlow = state.articles
     val snackbarHostState = remember { SnackbarHostState() }
     val unknownError = stringResource(R.string.unknown_error)
+
+    if (articlesFlow == null) {
+        Scaffold(
+            modifier = modifier,
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(R.string.space_flight_news),
+                            modifier = Modifier.semantics { heading() },
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                    ),
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+        ) { padding ->
+            GradientBackground(
+                topColor = MaterialTheme.colorScheme.primaryContainer,
+                bottomColor = MaterialTheme.colorScheme.inverseOnSurface,
+                containerColor = MaterialTheme.colorScheme.surface,
+            ) {
+                Column(modifier = Modifier.padding(padding)) {
+                    SearchField(
+                        query = state.searchQuery,
+                        onQueryChange = {
+                            onEvent(ArticlesListEvent.SearchQueryChanged(it))
+                        },
+                        onClear = { onEvent(ArticlesListEvent.ClearSearch) },
+                    )
+                    ShimmerPage()
+                }
+            }
+        }
+        return
+    }
+
+    val articles = articlesFlow.collectAsLazyPagingItems()
 
     LaunchedEffect(articles.loadState) {
         val refreshError = articles.loadState.refresh as? LoadState.Error
@@ -79,7 +120,6 @@ fun ArticlesListScreen(
         val error = refreshError ?: appendError
         val hasCachedItems = articles.itemCount > 0
 
-        // Only show snackbar when there are cached items or for append errors
         if (refreshError != null && !hasCachedItems) return@LaunchedEffect
 
         error?.let {
@@ -111,38 +151,10 @@ fun ArticlesListScreen(
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             Column(modifier = Modifier.padding(padding)) {
-                val searchLabel = stringResource(R.string.search_articles)
-                OutlinedTextField(
-                    value = attributes.searchQuery,
-                    onValueChange = actions.onSearchTextChange,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .semantics { contentDescription = searchLabel },
-                    placeholder = { Text(searchLabel) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.SearchIcon,
-                            contentDescription = stringResource(R.string.search),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
-                    trailingIcon = {
-                        if (attributes.searchQuery.isNotEmpty()) {
-                            IconButton(onClick = actions.onClearSearch) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = stringResource(R.string.clear_search),
-                                )
-                            }
-                        }
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    ),
+                SearchField(
+                    query = state.searchQuery,
+                    onQueryChange = { onEvent(ArticlesListEvent.SearchQueryChanged(it)) },
+                    onClear = { onEvent(ArticlesListEvent.ClearSearch) },
                 )
 
                 when (val refreshState = articles.loadState.refresh) {
@@ -150,33 +162,7 @@ fun ArticlesListScreen(
                         if (articles.itemCount == 0) {
                             ShimmerPage()
                         } else {
-                            LazyColumn(
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                items(
-                                    count = articles.itemCount,
-                                    key = articles.itemKey { it.id },
-                                    contentType = articles.itemContentType { "article" },
-                                ) { index ->
-                                    val article = articles[index]
-                                    if (article != null) {
-                                        articleCardSettings(
-                                            article = article,
-                                            onClick = {
-                                                actions.sendAnalytics(
-                                                    "article_selected",
-                                                    mapOf("id" to article.id.toString()),
-                                                )
-                                                actions.onArticleClick(article.id)
-                                            },
-                                        )()
-                                    }
-                                }
-                                item {
-                                    ShimmerArticleCard(modifier = Modifier.padding(vertical = 4.dp))
-                                }
-                            }
+                            ArticleLazyList(articles, onEvent)
                         }
                     }
 
@@ -195,91 +181,113 @@ fun ArticlesListScreen(
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 androidx.compose.material3.Button(
-                                    onClick = { articles.retry() }
+                                    onClick = { articles.retry() },
                                 ) {
                                     Text(stringResource(R.string.retry))
                                 }
                             }
                         } else {
-                            LazyColumn(
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                items(
-                                    count = articles.itemCount,
-                                    key = articles.itemKey { it.id },
-                                    contentType = articles.itemContentType { "article" },
-                                ) { index ->
-                                    val article = articles[index]
-                                    if (article != null) {
-                                        articleCardSettings(
-                                            article = article,
-                                            onClick = {
-                                                actions.sendAnalytics(
-                                                    "article_selected",
-                                                    mapOf("id" to article.id.toString()),
-                                                )
-                                                actions.onArticleClick(article.id)
-                                            },
-                                        )()
-                                    }
-                                }
-                                if (articles.loadState.append is LoadState.Loading) {
-                                    item {
-                                        ShimmerArticleCard(modifier = Modifier.padding(vertical = 4.dp))
-                                    }
-                                }
-                            }
+                            ArticleLazyList(articles, onEvent)
                         }
                     }
 
                     else -> {
-                        if (articles.itemCount == 0 && articles.loadState.refresh is LoadState.NotLoading) {
+                        if (articles.itemCount == 0 &&
+                            articles.loadState.refresh is LoadState.NotLoading
+                        ) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = if (attributes.searchQuery.isNotEmpty()) stringResource(R.string.no_results_found) else stringResource(
-                                        R.string.no_articles_available
-                                    ),
+                                    text = if (state.searchQuery.isNotEmpty()) {
+                                        stringResource(R.string.no_results_found)
+                                    } else {
+                                        stringResource(R.string.no_articles_available)
+                                    },
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         } else {
-                            LazyColumn(
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                items(
-                                    count = articles.itemCount,
-                                    key = articles.itemKey { it.id },
-                                    contentType = articles.itemContentType { "article" },
-                                ) { index ->
-                                    val article = articles[index]
-                                    if (article != null) {
-                                        articleCardSettings(
-                                            article = article,
-                                            onClick = {
-                                                actions.sendAnalytics(
-                                                    "article_selected",
-                                                    mapOf("id" to article.id.toString()),
-                                                )
-                                                actions.onArticleClick(article.id)
-                                            },
-                                        )()
-                                    }
-                                }
-                                if (articles.loadState.append is LoadState.Loading) {
-                                    item {
-                                        ShimmerArticleCard(modifier = Modifier.padding(vertical = 4.dp))
-                                    }
-                                }
-                            }
+                            ArticleLazyList(articles, onEvent)
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun SearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit,
+) {
+    val searchLabel = stringResource(R.string.search_articles)
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics { contentDescription = searchLabel },
+        placeholder = { Text(searchLabel) },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.SearchIcon,
+                contentDescription = stringResource(R.string.search),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = onClear) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = stringResource(R.string.clear_search),
+                    )
+                }
+            }
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        ),
+    )
+}
+
+@Composable
+private fun ArticleLazyList(
+    articles: androidx.paging.compose.LazyPagingItems<Article>,
+    onEvent: (ArticlesListEvent) -> Unit,
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(
+            count = articles.itemCount,
+            key = articles.itemKey { it.id },
+            contentType = articles.itemContentType { "article" },
+        ) { index ->
+            val article = articles[index]
+            if (article != null) {
+                articleCardSettings(
+                    article = article,
+                    onClick = {
+                        onEvent(ArticlesListEvent.ArticleClicked(article.id))
+                    },
+                )()
+            }
+        }
+        if (articles.loadState.append is LoadState.Loading) {
+            item {
+                ShimmerArticleCard(modifier = Modifier.padding(vertical = 4.dp))
             }
         }
     }
@@ -314,7 +322,11 @@ private fun GradientBackground(
 }
 
 @Composable
-internal fun ArticleCard(article: Article, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun ArticleCard(
+    article: Article,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()

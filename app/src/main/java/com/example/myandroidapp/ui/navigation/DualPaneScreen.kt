@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myandroidapp.R
+import com.example.myandroidapp.ui.articles.detail.ArticleDetailEvent
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailPaneViewModel
 import com.example.myandroidapp.ui.articles.detail.articleDetailContentSettings
-import com.example.myandroidapp.ui.articles.list.ArticlesListActions
-import com.example.myandroidapp.ui.articles.list.ArticlesListAttributes
+import com.example.myandroidapp.ui.articles.list.ArticlesListEvent
 import com.example.myandroidapp.ui.articles.list.ArticlesListScreen
 import com.example.myandroidapp.ui.articles.list.ArticlesListViewModel
 import com.example.myandroidapp.ui.common.UiState
@@ -37,31 +37,33 @@ fun DualPaneScreen(
     listViewModel: ArticlesListViewModel = hiltViewModel(),
     detailViewModel: ArticleDetailPaneViewModel = hiltViewModel(),
 ) {
-    val searchQuery by listViewModel.searchQuery.collectAsStateWithLifecycle()
+    val listState by listViewModel.state.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.weight(1f)) {
-            Box(modifier = Modifier
-                .weight(LIST_WEIGHT)
-                .fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .weight(LIST_WEIGHT)
+                    .fillMaxSize(),
+            ) {
                 ArticlesListScreen(
-                    attributes = ArticlesListAttributes(
-                        searchQuery = searchQuery,
-                        articles = listViewModel.articles,
-                    ),
-                    actions = ArticlesListActions(
-                        onSearchTextChange = listViewModel::onSearchTextChange,
-                        onClearSearch = listViewModel::clearSearch,
-                        onArticleClick = onArticleSelected,
-                        sendAnalytics = listViewModel::sendAnalytics,
-                    ),
+                    state = listState,
+                    onEvent = { event ->
+                        when (event) {
+                            is ArticlesListEvent.ArticleClicked ->
+                                onArticleSelected(event.articleId)
+                            else -> listViewModel.onEvent(event)
+                        }
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
             VerticalDivider(modifier = Modifier.fillMaxHeight())
-            Box(modifier = Modifier
-                .weight(DETAIL_WEIGHT)
-                .fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .weight(DETAIL_WEIGHT)
+                    .fillMaxSize(),
+            ) {
                 DetailPane(
                     articleId = selectedArticleId,
                     viewModel = detailViewModel,
@@ -91,7 +93,7 @@ private fun DetailPane(
         LaunchedEffect(articleId) {
             viewModel.loadArticle(articleId)
         }
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val state by viewModel.state.collectAsStateWithLifecycle()
         when (val s = state) {
             is UiState.Loading -> Box(
                 modifier = Modifier.fillMaxSize(),
@@ -111,7 +113,7 @@ private fun DetailPane(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     androidx.compose.material3.Button(
-                        onClick = { viewModel.loadArticle(articleId) }
+                        onClick = { viewModel.onEvent(ArticleDetailEvent.Retry) },
                     ) {
                         Text(stringResource(R.string.retry))
                     }
@@ -119,7 +121,7 @@ private fun DetailPane(
             }
 
             is UiState.Success -> articleDetailContentSettings(
-                article = s.data.article
+                article = s.data.article,
             )()
         }
     }
