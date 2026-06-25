@@ -2,6 +2,15 @@
 
 ## 2026-05-29
 
+- Creada [[patterns/mvvm-vs-mvi]] — comparativa exhaustiva MVVM vs MVI en Android
+  - Tablas comparativas: estructura, flujo de datos, entry points, estado, eventos, side effects
+  - Ejemplos de código reales del proyecto (misma funcionalidad en ambos patrones)
+  - Diagramas de flujo visuales lado a lado
+  - MVI Lite como punto medio pragmático
+  - FAQ: Paging 3 + MVI, librerías, inmutabilidad
+  - Guía de cuándo usar cada patrón según tamaño y criticidad del proyecto
+  - [[index]] actualizado con link a la nueva página
+
 - Creada [[patterns/secure-coding]] — guía completa de secure coding basada en análisis de repos Ualá
   - **AES/CBC/PKCS7** — encriptación del PIN en AndroidKeyStore con `setUserAuthenticationRequired`
   - **SHA-256** — RSA-OAEP-SHA256 para datos al backend + hashing de deviceId (migrado de SHA-1)
