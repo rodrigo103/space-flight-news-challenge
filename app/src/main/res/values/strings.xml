@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MeliChallenge</string>
+    <string name="app_name">SpaceFlightNews</string>
     <string name="space_flight_news">Space Flight News</string>
     <string name="search_articles">Search articles…</string>
     <string name="search">Search</string>

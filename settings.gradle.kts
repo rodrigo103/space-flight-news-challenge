@@ -17,6 +17,6 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-rootProject.name = "MeliChallenge"
+rootProject.name = "SpaceFlightNews"
 include(":app")
 include(":domain")

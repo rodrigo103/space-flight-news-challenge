@@ -6,7 +6,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=rodrigo103_proyecto-android&metric=coverage)](https://sonarcloud.io/summary/new_code?id=rodrigo103_proyecto-android)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=rodrigo103_proyecto-android&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=rodrigo103_proyecto-android)
 
-**MeliChallenge** — Android app que consume la [Spaceflight News API](https://api.spaceflightnewsapi.net/v4/) para explorar artículos del mundo aeroespacial. Construida con tecnologías modernas del ecosistema Android, arquitectura limpia y testing sólido.
+**SpaceFlightNews** — Android app que consume la [Spaceflight News API](https://api.spaceflightnewsapi.net/v4/) para explorar artículos del mundo aeroespacial. Construida con tecnologías modernas del ecosistema Android, arquitectura limpia y testing sólido.
 
 ---
 
