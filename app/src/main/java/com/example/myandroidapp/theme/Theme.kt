@@ -31,7 +31,7 @@ private val LightColorScheme =
     )
 
 @Composable
-fun MeliChallengeTheme(
+fun SpaceFlightNewsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

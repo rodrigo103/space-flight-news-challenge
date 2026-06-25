@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.MeliChallenge" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.SpaceFlightNews" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <style name="Theme.MeliChallenge.Splash" parent="Theme.SplashScreen">
-        <item name="postSplashScreenTheme">@style/Theme.MeliChallenge</item>
+    <style name="Theme.SpaceFlightNews.Splash" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/Theme.SpaceFlightNews</item>
     </style>
 </resources>
