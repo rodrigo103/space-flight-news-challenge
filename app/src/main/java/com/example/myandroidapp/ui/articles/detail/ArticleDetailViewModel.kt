@@ -17,6 +17,7 @@ import javax.inject.Inject
 
 data class ArticleDetailState(
     val article: Article,
+    val navigateBack: Boolean = false,
 )
 
 @HiltViewModel
@@ -49,6 +50,19 @@ class ArticleDetailViewModel @Inject constructor(
                     analytics.logError(e, "loadArticle_$articleId")
                     _uiState.value = UiState.Error(e.message ?: "Unknown error")
                 }
+        }
+    }
+
+    fun onDeleteArticle() {
+        val currentState = _uiState.value
+        if (currentState !is UiState.Success) return
+        viewModelScope.launch {
+            analytics.logEvent("article_deleted", mapOf("id" to articleId.toString()))
+            _uiState.update { state ->
+                if (state is UiState.Success) {
+                    state.copy(data = state.data.copy(navigateBack = true))
+                } else state
+            }
         }
     }
 }

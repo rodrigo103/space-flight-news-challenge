@@ -16,4 +16,5 @@
     <string name="open_in_browser">Open in browser</string>
     <string name="select_an_article">Select an article</string>
     <string name="offline_banner">No internet connection — showing cached data</string>
+    <string name="delete_article">Delete article</string>
 </resources>

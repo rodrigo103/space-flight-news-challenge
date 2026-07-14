@@ -9,4 +9,5 @@ data class ArticleDetailAttributes(
 data class ArticleDetailActions(
     val onBack: () -> Unit,
     val onRetry: () -> Unit = {},
+    val onDelete: () -> Unit = {},
 )

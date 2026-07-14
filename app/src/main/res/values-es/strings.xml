@@ -16,4 +16,5 @@
     <string name="open_in_browser">Abrir en navegador</string>
     <string name="select_an_article">Seleccioná un artículo</string>
     <string name="offline_banner">Sin conexión — mostrando datos guardados</string>
+    <string name="delete_article">Eliminar artículo</string>
 </resources>
