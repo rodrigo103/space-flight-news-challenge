@@ -1,5 +1,21 @@
 # Changelog del Wiki
 
+## 2026-08-04
+
+- Wiki audit: contradicciones entre wiki y código, verificadas una por una contra el source
+  - **Binding de analytics corregido** — [[architecture/di-hierarchy]] y [[tools/hilt-setup]] decían que `AnalyticsModule` bindea `AnalyticsHelper → TimberAnalyticsHelper`. El código bindea `CompositeAnalyticsHelper(listOf(firebase, timber))`, como ya documentaba [[patterns/analytics-composite]]
+  - **ProGuard/R8 corregido** — [[processes/build-and-test]] decía "minification deshabilitado". El release tiene `isMinifyEnabled = true`, `isShrinkResources = true` y `proguard-android-optimize.txt`. Sección reescrita con el bloque real
+  - **`allowBackup` corregido** — [[patterns/secure-coding]] marcaba ⚠️ `true` para este proyecto; el manifest dice `false` desde el commit `d16e678`
+  - **Rename del proyecto** — [[architecture/app-structure]] decía `MeliChallenge`; `rootProject.name` es `SpaceFlightNews` desde `63964a0`. Agregada nota de que los paquetes siguen siendo `com.example.myandroidapp`
+  - **Links rotos** — `[[tool/retrofit-setup]]` → [[tools/retrofit-setup]] en [[patterns/secure-coding]]; link relativo `../mvi-lite` en [[patterns/mvvm-vs-mvi]] reemplazado por referencia a las ramas git `mvi-lite` / `mvi-full` (ambas existen local y en `origin`)
+  - **Formato** — [[tools/retrofit-setup]] no tenía título ni header `Last verified`; tabla de [[tools/key-dependencies]] estaba partida en dos por una línea en blanco
+
+- Documentado el feature de delete del detalle (commit `1cdfb26`, sin registrar en el wiki hasta ahora)
+  - Actualizado [[patterns/attributes-actions]] — nueva sección "Navegación disparada desde el estado": `onDelete` en `ArticleDetailActions`, flag `navigateBack` en `ArticleDetailState`, `LaunchedEffect` en el Route
+  - **`onDeleteArticle()` no borra nada** — no toca Room ni la API, solo loguea `article_deleted` y marca `navigateBack = true`. Documentado explícitamente para que no se lea como una operación de datos
+  - Documentado el tradeoff del flag en el estado (no se resetea tras consumirse) vs `Channel<SideEffect>` — ver [[patterns/mvvm-vs-mvi]]
+  - Actualizado [[patterns/analytics-composite]] — agregado `article_deleted` a la tabla de eventos
+
 ## 2026-05-29
 
 - Creada [[patterns/mvvm-vs-mvi]] — comparativa exhaustiva MVVM vs MVI en Android

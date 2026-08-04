@@ -21,7 +21,6 @@ Resumen de las dependencias principales del proyecto. Versionadas via version ca
 | kotlinx.serialization | 1.6+ | JSON serialization |
 | Coil | 2.6+ | Image loading (Compose) |
 | Paging 3 | 3.3+ | Paginación |
-
 | Lottie | 6+ | Animaciones |
 | LeakCanary | 2.13+ | Memory leak detection (debug) |
 | Timber | 5.0+ | Logging |

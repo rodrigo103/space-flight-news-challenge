@@ -5,7 +5,7 @@ tags:
 
 # DI Hierarchy
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — removed `DataStoreModule`, updated `AppModule` bindings
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — corregido binding de `AnalyticsModule` (era `TimberAnalyticsHelper`, es `CompositeAnalyticsHelper`)
 
 Jerarquía de módulos de Hilt DI. Todos los módulos están en `com.example.myandroidapp.di`.
 
@@ -20,7 +20,7 @@ RepositoryEntryPoint eliminado — ya no se pasa repository a composables.
 | `DatabaseModule` | Singleton | `AppDatabase`, `ArticleDao` |
 | `RepositoryModule` | Singleton | `ArticlesRepository` |
 | `DispatcherModule` | Singleton | `CoroutineDispatchers` provider |
-| `AnalyticsModule` | Singleton | `AnalyticsHelper` → `TimberAnalyticsHelper` |
+| `AnalyticsModule` | Singleton | `AnalyticsHelper` → `CompositeAnalyticsHelper(listOf(firebase, timber))` |
 
 ## Dependencies entre módulos
 

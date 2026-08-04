@@ -5,7 +5,7 @@ tags:
 
 # Analytics con Composite Pattern
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source]
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — agregado evento `article_deleted`
 
 ## Arquitectura
 
@@ -119,6 +119,7 @@ Los ViewModels inyectan `AnalyticsHelper` (la interfaz, no la implementación co
 | `screen_view` / `ArticleDetail_$id` | `ArticleDetailViewModel.init` / `ArticleDetailPaneViewModel.loadArticle` | — |
 | `article_selected` | Screen → onArticleClick | `id` |
 | `article_loaded` | ViewModel → onSuccess | `id` |
+| `article_deleted` | `ArticleDetailViewModel.onDeleteArticle` | `id` |
 | `app_error` / `loadArticle_$id` | ViewModel → onFailure | `context`, `error` |
 
 ## Por qué Composite y no Strategy

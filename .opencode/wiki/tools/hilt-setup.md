@@ -5,7 +5,7 @@ tags:
 
 # Hilt Setup
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — removed `DataStoreModule`, updated `AppModule` bindings
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — corregido binding de `AnalyticsModule` (era `TimberAnalyticsHelper`, es `CompositeAnalyticsHelper`)
 
 ## Entries
 
@@ -21,7 +21,7 @@ tags:
 | `DatabaseModule` | `AppDatabase`, `ArticleDao` |
 | `RepositoryModule` | `ArticlesRepository` |
 | `DispatcherModule` | `CoroutineDispatchers` |
-| `AnalyticsModule` | `AnalyticsHelper` → `TimberAnalyticsHelper` |
+| `AnalyticsModule` | `AnalyticsHelper` → `CompositeAnalyticsHelper(listOf(firebase, timber))` |
 
 ## Plugins Gradle
 

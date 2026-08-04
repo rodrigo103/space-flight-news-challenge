@@ -262,7 +262,7 @@ En MVVM tenés **N canales de vuelta** (uno por método público). En MVI tenés
 
 ## MVI Lite — El punto medio
 
-No hace falta irse a MVI completo. Existe un punto intermedio ([ver implementación en la rama `mvi-lite`](../mvi-lite)):
+No hace falta irse a MVI completo. Existe un punto intermedio, implementado en la rama git `mvi-lite` (`git switch mvi-lite`):
 
 ```
 MVVM + canal de side effects = MVI Lite
@@ -329,5 +329,5 @@ El `ScreenState` es un `data class` inmutable. Cada vez que procesás un evento,
 - [[patterns/attributes-actions]] — Attributes/Actions pattern
 - [[patterns/error-handling]] — Manejo de errores con Result + UiState
 - [[patterns/room-paging]] — Room + Paging 3 + RemoteMediator
-- `mvi-full` — Rama con MVI completo implementado
-- `mvi-lite` — Rama con MVI Lite implementado
+- Rama git `mvi-full` — MVI completo implementado (también en `origin`)
+- Rama git `mvi-lite` — MVI Lite implementado (también en `origin`)

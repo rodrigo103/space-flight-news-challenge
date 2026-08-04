@@ -1,6 +1,6 @@
 # Wiki del Proyecto
 
-> **Last verified:** 2026-05-19 | **Verified by:** Batch wiki update
+> **Last verified:** 2026-08-04 | **Verified by:** Wiki audit — contradicciones corregidas contra el código
 
 Base de conocimiento persistente del proyecto, mantenida por opencode.
 

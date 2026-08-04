@@ -2,6 +2,11 @@
 tags:
   - wiki/tool
 ---
+
+# Retrofit Setup
+
+> **Last verified:** 2026-08-04 | **Verified by:** [source]
+
 ## Config
 
 - Base URL: `https://api.spaceflightnewsapi.net/v4`

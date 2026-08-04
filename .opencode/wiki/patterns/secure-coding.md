@@ -6,7 +6,7 @@ tags:
 
 # Secure Coding
 
-> **Last verified:** 2026-05-29 | **Verified by:** [analysis]
+> **Last verified:** 2026-08-04 | **Verified by:** [analysis] — tabla comparativa revalidada contra el build actual de este proyecto
 
 ## Contexto
 
@@ -245,7 +245,7 @@ Reglas clave:
 | `minifyEnabled` (release) | `true` | `true` |
 | `shrinkResources` | No habilitado | `true` |
 | Reglas ProGuard | 188 líneas (específicas por librería) | 73 líneas |
-| `allowBackup` | `false` | ⚠️ `true` |
+| `allowBackup` | `false` | `false` (corregido en commit `d16e678`) |
 
 ### Entrevista — qué decir
 
@@ -471,5 +471,5 @@ Ualá usa `BIOMETRIC_STRONG` — solo acepta biometría respaldada por TEE/Secur
 
 - [[patterns/error-handling]] — Manejo de excepciones de red (CertificateException, SSLException)
 - [[patterns/room-paging]] — Room + SQLCipher (database encryption layer)
-- [[tool/retrofit-setup]] — OkHttp + TLS configuration
+- [[tools/retrofit-setup]] — OkHttp + TLS configuration
 - [[processes/tech-defense-guide]] — Guía de defensa técnica para entrevistas

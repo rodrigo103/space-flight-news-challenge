@@ -5,12 +5,12 @@ tags:
 
 # Build & Test
 
-> **Last verified:** 2026-05-17 | **Verified by:** [source]
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — corregida sección ProGuard/R8 (minification está habilitada)
 
 ## Build
 
 - `./gradlew assembleDebug` — build debug APK
-- `./gradlew assembleRelease` — build release APK (minification disabled por ahora)
+- `./gradlew assembleRelease` — build release APK (con minification + shrinking, ver ProGuard/R8)
 - Usar Gradle wrapper (`./gradlew`), no gradle global
 
 ## Static Analysis
@@ -60,7 +60,26 @@ Workflow en `.github/workflows/sonar.yml` que corre en cada PR y push a `main`:
 
 ## ProGuard / R8
 
-Minification deshabilitado en release por ahora. ProGuard rules file: `app/proguard-rules.pro`.
+Habilitado en el build type `release` [source]:
+
+```kotlin
+release {
+    isMinifyEnabled = true
+    isShrinkResources = true
+    proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+    )
+}
+```
+
+- `isMinifyEnabled` — R8 hace shrinking, ofuscación y optimización del bytecode
+- `isShrinkResources` — elimina recursos no referenciados (requiere `isMinifyEnabled = true`)
+- Se usa `proguard-android-optimize.txt` (no el default `proguard-android.txt`), que habilita las optimizaciones de R8
+- Reglas propias en `app/proguard-rules.pro` (73 líneas)
+- El build type `debug` tiene `enableUnitTestCoverage = true` para reportes de cobertura
+
+Ver [[patterns/secure-coding]] para por qué cada librería con reflection o code generation necesita su keep rule.
 
 ## Gradle config clave
 

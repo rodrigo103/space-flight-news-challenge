@@ -5,7 +5,7 @@ tags:
 
 # Attributes / Actions Pattern
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — updated Paging 3 preview limitation
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — documentada la acción de delete + navegación state-driven
 
 ## Qué es
 
@@ -123,6 +123,52 @@ articleCardSettings(
 Esto mantiene:
 - **Eventos de ciclo de vida** (`screen_view`) → en el `init` del ViewModel
 - **Eventos de usuario** (clicks) → en la Screen via `sendAnalytics`
+
+## Navegación disparada desde el estado
+
+`ArticleDetailScreen` tiene una acción de delete en el `TopAppBar` que necesita navegar hacia atrás **después** de ejecutarse. Como MVVM no tiene canal de side effects, la navegación se modela con un flag dentro del estado [source]:
+
+```kotlin
+// ArticleDetailViewModel.kt — el estado lleva el flag
+data class ArticleDetailState(
+    val article: Article,
+    val navigateBack: Boolean = false,
+)
+
+fun onDeleteArticle() {
+    val currentState = _uiState.value
+    if (currentState !is UiState.Success) return
+    viewModelScope.launch {
+        analytics.logEvent("article_deleted", mapOf("id" to articleId.toString()))
+        _uiState.update { state ->
+            if (state is UiState.Success) {
+                state.copy(data = state.data.copy(navigateBack = true))
+            } else state
+        }
+    }
+}
+
+// ArticleDetailScreenRoute.kt — el Route observa el flag y navega
+LaunchedEffect(state) {
+    if ((state as? UiState.Success)?.data?.navigateBack == true) {
+        onBack()
+    }
+}
+```
+
+Las Actions del detalle quedan así:
+
+```kotlin
+data class ArticleDetailActions(
+    val onBack: () -> Unit,
+    val onRetry: () -> Unit = {},
+    val onDelete: () -> Unit = {},
+)
+```
+
+> **Nota:** `onDeleteArticle()` **no borra nada** — no toca Room ni la API. Solo loguea el evento `article_deleted` y marca `navigateBack = true`. Es una acción de UI, no una operación de datos. [source]
+
+**Tradeoff del flag en el estado:** es el equivalente MVVM de un side effect. Funciona, pero el flag queda pegado en el estado después de consumirse (no hay reseteo), así que si la pantalla no se destruye tras navegar, el `LaunchedEffect` puede re-dispararse. La alternativa formal es un `Channel<SideEffect>` — ver [[patterns/mvvm-vs-mvi]] y [[patterns/mvi-migration]]. [analysis]
 
 ## Previews
 

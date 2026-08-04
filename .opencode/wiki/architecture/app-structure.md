@@ -5,14 +5,16 @@ tags:
 
 # App Structure
 
-> **Last verified:** 2026-05-28 | **Verified by:** [source] — extracted `:domain` as standalone Gradle module
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — proyecto renombrado a `SpaceFlightNews` (`settings.gradle.kts`)
 
-Estructura del proyecto `MeliChallenge`. Proyecto **bimódulo** (`:app` + `:domain`) con Jetpack Compose, organizado en 3 capas (domain, data, ui) + di + analytics.
+Estructura del proyecto `SpaceFlightNews`. Proyecto **bimódulo** (`:app` + `:domain`) con Jetpack Compose, organizado en 3 capas (domain, data, ui) + di + analytics.
+
+> **Nota:** el nombre del proyecto (`rootProject.name`) es `SpaceFlightNews` desde el commit `63964a0`. Los nombres de paquete siguen siendo `com.example.myandroidapp` — no se renombraron.
 
 ## Module structure
 
 ```
-MeliChallenge/
+SpaceFlightNews/
 ├── :domain/                        # Gradle module — pure Kotlin/JVM, KMP-ready
 │   └── build.gradle.kts            # kotlin-jvm + kotlinx.serialization + coroutines + paging-common + javax.inject
 ├── :app/                           # Gradle module — Android app
