@@ -54,6 +54,26 @@ Detalle en `.opencode/wiki/patterns/kmp-migration.md`.
 
 ---
 
+# Dos fuentes de verdad: wiki y OpenSpec
+
+El proyecto tiene **dos** sistemas de documentación, y no son redundantes. Antes de escribir en
+alguno, verificá cuál corresponde:
+
+| | Rol | Naturaleza |
+|---|---|---|
+| `.opencode/wiki/` | **Descriptivo** — cómo está construido y **por qué**: arquitectura, decisiones, tradeoffs, gotchas | Acumula; se actualiza *después* del trabajo |
+| `openspec/specs/` | **Normativo** — **qué** debe hacer el sistema: requisitos por capacidad | Se reemplaza al archivar un change |
+
+**Regla práctica:**
+
+- ¿Estás documentando una decisión, un tradeoff o algo que te hizo perder una tarde? → **wiki**
+- ¿Estás definiendo comportamiento que el sistema debe cumplir? → **spec de OpenSpec**
+- ¿Un cambio con requisitos de comportamiento nuevos? → `/opsx:propose`, y leé el wiki primero
+- ¿Un refactor o port sin cambio de comportamiento? → **no necesita change de OpenSpec**; el delta
+  de spec sería vacío. Las fases 1–5 de la migración KMP entran en esta categoría.
+
+---
+
 # LLM Wiki
 
 El proyecto tiene un wiki persistente en `.opencode/wiki/` que opencode mantiene incrementalmente.

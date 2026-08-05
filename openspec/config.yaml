@@ -1,0 +1,78 @@
+schema: spec-driven
+
+context: |
+  Space Flight News — proyecto Kotlin Multiplatform.
+
+  ## Estructura
+
+  :shared (KMP) — domain, data, analytics, connectivity.
+                  Targets: androidTarget, iosX64, iosArm64, iosSimulatorArm64.
+  :app          — UI Compose, tema, arranque. Solo Android.
+  iosApp        — SwiftUI (aún no existe).
+
+  La lógica se comparte; la UI es nativa en cada plataforma. Los ViewModels
+  viven en :app: la presentación NO se comparte.
+
+  ## Stack
+
+  Ktor (no Retrofit) · Room KMP con BundledSQLiteDriver · Koin (no Hilt) ·
+  kotlinx.serialization · Paging 3 · Compose + Material 3 · detekt.
+
+  ## Restricciones que importan
+
+  - Nada en :shared puede usar javax.inject, java.* ni Timber: no compilan
+    para Kotlin/Native.
+  - El repositorio devuelve ApiResult<T>, no kotlin.Result. Result es una
+    value class y no se exporta al framework de Objective-C.
+  - Flow<PagingData> no es consumible desde SwiftUI; iOS usa paginación por
+    offset con getArticles(limit, offset).
+  - Koin resuelve en runtime: un binding faltante no rompe el build.
+  - Para versiones de dependencias, consultar maven-metadata.xml, no los
+    índices de búsqueda: ya dieron datos desactualizados tres veces.
+
+  ## Frontera con el wiki — IMPORTANTE
+
+  El proyecto tiene un wiki en .opencode/wiki/ que es una fuente de verdad
+  distinta, no redundante. La división es:
+
+    .opencode/wiki/   DESCRIPTIVO — cómo está construido y POR QUÉ.
+                      Arquitectura, decisiones, tradeoffs, gotchas.
+                      Acumula conocimiento; se actualiza después del trabajo.
+
+    openspec/specs/   NORMATIVO — QUÉ debe hacer el sistema.
+                      Requisitos por capacidad. Se reemplaza al archivar.
+
+  Antes de proponer un cambio, leer el wiki: probablemente ya documenta el
+  área y sus tradeoffs. Al implementar, actualizar ambos — specs para el
+  comportamiento nuevo, wiki si cambió arquitectura o aparecieron gotchas.
+
+  El plan y estado de la migración KMP están en
+  .opencode/wiki/patterns/kmp-migration.md.
+
+  ## Convenciones
+
+  - Commits convencionales (feat/fix/refactor/docs/build/chore), en inglés.
+  - El skill check-commit corre detekt y tests antes de commitear.
+  - ./gradlew test NO cubre :shared. Usar :shared:testAndroidHostTest.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
