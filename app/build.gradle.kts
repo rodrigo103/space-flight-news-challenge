@@ -3,8 +3,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.hilt)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
     alias(libs.plugins.sonarcloud)
     alias(libs.plugins.google.gms.google.services)
@@ -100,11 +98,6 @@ tasks.register<JacocoReport>("jacocoTestReport") {
                 "**/BuildConfig.*",
                 "**/*Test*.*",
                 "**/*Preview*.*",
-                "**/*_Factory*",
-                "**/*_HiltModules*",
-                "**/Hilt_*",
-                "**/dagger/**",
-                "**/Dagger*.*",
                 "android/**",
             )
         }
@@ -170,10 +163,9 @@ dependencies {
     // Material Icons
     implementation(libs.androidx.compose.material.icons)
 
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.hilt.navigation.compose)
+    // Koin
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
 
     // LeakCanary
     debugImplementation(libs.leakcanary)
@@ -187,11 +179,7 @@ dependencies {
 // Lottie
     implementation(libs.lottie.compose)
 
-    // Room
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    implementation(libs.room.paging)
-    ksp(libs.room.compiler)
+    // Room vive entero en :shared; :app no lo referencia.
 
     // Paging 3
     implementation(libs.paging.runtime)

@@ -7,7 +7,6 @@ import androidx.paging.cachedIn
 import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.domain.repository.ArticlesRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -16,10 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
-import javax.inject.Inject
 
-@HiltViewModel
-class ArticlesListViewModel @Inject constructor(
+class ArticlesListViewModel(
     private val repository: ArticlesRepository,
     private val analytics: AnalyticsHelper,
 ) : ViewModel() {

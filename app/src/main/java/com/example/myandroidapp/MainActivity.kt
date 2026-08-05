@@ -12,14 +12,11 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.myandroidapp.data.connectivity.ConnectivityObserver
 import com.example.myandroidapp.theme.SpaceFlightNewsTheme
 import com.example.myandroidapp.ui.navigation.ResponsiveApp
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var connectivityObserver: ConnectivityObserver
+    private val connectivityObserver: ConnectivityObserver by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()

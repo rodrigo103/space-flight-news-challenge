@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myandroidapp.R
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailPaneViewModel
@@ -34,8 +34,8 @@ fun DualPaneScreen(
     selectedArticleId: Int?,
     onArticleSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    listViewModel: ArticlesListViewModel = hiltViewModel(),
-    detailViewModel: ArticleDetailPaneViewModel = hiltViewModel(),
+    listViewModel: ArticlesListViewModel = koinViewModel(),
+    detailViewModel: ArticleDetailPaneViewModel = koinViewModel(),
 ) {
     val searchQuery by listViewModel.searchQuery.collectAsStateWithLifecycle()
 

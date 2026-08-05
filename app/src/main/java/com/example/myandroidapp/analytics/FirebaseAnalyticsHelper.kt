@@ -3,13 +3,9 @@ package com.example.myandroidapp.analytics
 import android.content.Context
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class FirebaseAnalyticsHelper @Inject constructor(
-    @ApplicationContext context: Context,
+class FirebaseAnalyticsHelper(
+    context: Context,
 ) : AnalyticsHelper {
 
     private val firebaseAnalytics = FirebaseAnalytics.getInstance(context)

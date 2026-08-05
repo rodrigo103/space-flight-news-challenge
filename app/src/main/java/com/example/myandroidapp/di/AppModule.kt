@@ -1,33 +1,43 @@
 package com.example.myandroidapp.di
 
-import android.app.Application
 import android.content.pm.ApplicationInfo
-import com.example.myandroidapp.domain.repository.ArticlesRepository
-import com.example.myandroidapp.domain.usecase.GetArticleUseCase
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Named
-import javax.inject.Singleton
+import com.example.myandroidapp.analytics.AnalyticsHelper
+import com.example.myandroidapp.analytics.CompositeAnalyticsHelper
+import com.example.myandroidapp.analytics.FirebaseAnalyticsHelper
+import com.example.myandroidapp.analytics.TimberAnalyticsHelper
+import com.example.myandroidapp.data.connectivity.ConnectivityObserver
+import com.example.myandroidapp.data.local.createDatabase
+import com.example.myandroidapp.ui.articles.detail.ArticleDetailPaneViewModel
+import com.example.myandroidapp.ui.articles.detail.ArticleDetailViewModel
+import com.example.myandroidapp.ui.articles.list.ArticlesListViewModel
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
+/**
+ * Grafo específico de Android. La capa data la aporta `sharedModule()`.
+ */
+val appModule = module {
+    // AppDatabase se registra acá porque su construcción necesita Context; `sharedModule`
+    // la consume con get().
+    single { createDatabase(androidContext()) }
 
-    @Provides
-    @Named("isDebug")
-    fun provideIsDebug(app: Application): Boolean {
-        return app.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    single { ConnectivityObserver(androidContext()) }
+
+    single<AnalyticsHelper> {
+        CompositeAnalyticsHelper(
+            listOf(
+                FirebaseAnalyticsHelper(androidContext()),
+                TimberAnalyticsHelper(),
+            ),
+        )
     }
 
-    /**
-     * `GetArticleUseCase` vive en `:shared` (commonMain), donde `javax.inject` no está
-     * disponible porque no compila para Kotlin/Native. Hasta que la Fase 4 reemplace
-     * Hilt por Koin, se construye explícitamente acá.
-     */
-    @Provides
-    @Singleton
-    fun provideGetArticleUseCase(repository: ArticlesRepository): GetArticleUseCase =
-        GetArticleUseCase(repository)
+    viewModel { ArticlesListViewModel(get(), get()) }
+    viewModel { ArticleDetailPaneViewModel(get(), get()) }
+    // SavedStateHandle lo inyecta Koin automáticamente al estar en el constructor.
+    viewModel { ArticleDetailViewModel(get(), get(), get()) }
 }
+
+fun isDebugBuild(applicationInfo: ApplicationInfo): Boolean =
+    applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
