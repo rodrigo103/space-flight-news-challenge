@@ -1,5 +1,15 @@
 # Changelog del Wiki
 
+## 2026-08-05 (3)
+
+- **Fase 5 de [[patterns/kmp-migration]] completada** (commits `b8a00e4`, `af3e75c`) — abstracciones de plataforma
+  - **Conectividad**: `ConnectivityObserver` pasa a interfaz en `commonMain` con `ConnectivityManager` en Android y **`NWPathMonitor`** en iOS. Interfaz + factory y no `expect class`, porque los constructores difieren (Android necesita `Context`, iOS nada) y `expect class` exige firmas idénticas
+  - **Analytics**: `AnalyticsHelper` y `CompositeAnalyticsHelper` a `commonMain`; `TimberAnalyticsHelper` (Android-only) reemplazado por `LoggingAnalyticsHelper` sobre `AppLogger`, que funciona en ambas plataformas; Firebase se queda en `androidMain`
+  - **Tag de Logcat preservado**: `AppLogger` recibió un `tag` opcional para no degradarlo a prefijo de mensaje. Verificado en emulador: sigue saliendo `D Analytics: Screen View: ArticlesList`
+  - **`data/` y `analytics/` ya no existen en `:app`**, que queda solo con `MainActivity`, `MyApplication`, `di/`, `theme/` y `ui/`
+  - Detalles registrados: los valores por defecto van en el `expect` y no en el `actual`; `firebase-analytics` hubo que declararlo en `androidMain` de `:shared`
+  - Actualizadas [[patterns/analytics-composite]], [[architecture/responsive-layout]], [[architecture/app-structure]]
+
 ## 2026-08-05 (2)
 
 - **Fase 4 de [[patterns/kmp-migration]] completada** (commit `e66b2a6`) — Hilt reemplazado por Koin 4.2.2

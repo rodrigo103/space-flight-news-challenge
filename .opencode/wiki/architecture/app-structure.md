@@ -102,7 +102,8 @@ SpaceFlightNews/
 | Data | `:shared` | `data/` | Implementations: remote (`ApiService` con Ktor, `ApiException`, `ApiResult`, `HttpClientFactory`), local (Room KMP entities, DAOs, `RemoteMediator`), repository impl, mappers. Solo `connectivity/` sigue en `:app` (Fase 5) |
 | UI | `:app` | `ui/` | Theme, navigation, common (`UiState`), components, feature screens, previews |
 | DI | ambos | `di/` | `sharedModule()` en `:shared`, `appModule` en `:app` — Koin, ver [[tools/koin-setup]] |
-| Analytics | `:app` | `analytics/` | Interface + Timber + Firebase + Composite pattern |
+| Analytics | `:shared` | `analytics/` | Interface + Composite + Logging en `commonMain`; Firebase en `androidMain` |
+| Conectividad | `:shared` | `data/connectivity/` | Interfaz común; `ConnectivityManager` en Android, `NWPathMonitor` en iOS |
 
 ## Key characteristics
 

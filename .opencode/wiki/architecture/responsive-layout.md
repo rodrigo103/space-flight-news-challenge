@@ -5,7 +5,12 @@ tags:
 
 # Responsive Layout + Dual Pane
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — added ConnectivityObserver + OfflineBanner
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — `ConnectivityObserver` movido a `:shared` en la Fase 5 de [[patterns/kmp-migration]]
+
+> **Nota:** `ConnectivityObserver` es ahora una **interfaz en `:shared/commonMain`** con
+> implementación por plataforma (`AndroidConnectivityObserver` con `ConnectivityManager`,
+> `IosConnectivityObserver` con `NWPathMonitor`). `MainActivity` la obtiene con `by inject()` de
+> Koin. El `Flow<ConnectivityStatus>` que consume `ResponsiveApp` no cambió.
 
 ## Estrategia adaptativa
 

@@ -5,25 +5,28 @@ tags:
 
 # Analytics con Composite Pattern
 
-> **Last verified:** 2026-08-04 | **Verified by:** [source] — agregado evento `article_deleted`
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — movido a `:shared` en la Fase 5 de [[patterns/kmp-migration]]
 
 ## Arquitectura
 
-El módulo `analytics/` implementa el **Composite Pattern** para despachar eventos de analytics a múltiples backends simultáneamente sin contaminar el código de negocio.
+El módulo `analytics/` implementa el **Composite Pattern** para despachar eventos de analytics a múltiples backends simultáneamente sin contaminar el código de negocio. Vive en `:shared`, con los delegates que dependen de la plataforma en sus source sets.
 
 ```
 ViewModel / Screen
         │
         ▼
-   AnalyticsHelper (interface)
+   AnalyticsHelper (interface, commonMain)
         │
         ▼
-CompositeAnalyticsHelper
+CompositeAnalyticsHelper (commonMain)
         │
-   ┌────┴────┐
-   ▼         ▼
-Firebase  Timber
+   ┌────┴──────────────┐
+   ▼                   ▼
+Firebase           Logging
+(androidMain)      (commonMain, vía AppLogger)
 ```
+
+En iOS el composite lleva **solo** el helper de logging: Firebase requiere su propio SDK del lado Swift. [gap]
 
 ## Interface `AnalyticsHelper`
 
@@ -39,13 +42,15 @@ Tres operaciones: eventos custom, errores con stacktrace, y screen views. Todas 
 
 ## Implementaciones
 
-### `TimberAnalyticsHelper`
+### `LoggingAnalyticsHelper`
 
-Loggea a Logcat vía Timber tag `"Analytics"`:
+Vive en `commonMain` y loguea vía `AppLogger`, que resuelve a **Timber en Android** y **`NSLog` en iOS** — el mismo helper sirve en ambas plataformas. Reemplazó a `TimberAnalyticsHelper`, que era Android-only. [source]
 
-- `logEvent` → `Timber.d("Event: %s | params: %s")`
-- `logError` → `Timber.e(throwable, "Error: %s")`
-- `logScreenView` → `Timber.d("Screen View: %s")`
+- `logEvent` → `AppLogger.d("Event: $name | params: $params", "Analytics")`
+- `logError` → `AppLogger.e(throwable, "Error: $context", "Analytics")`
+- `logScreenView` → `AppLogger.d("Screen View: $screenName", "Analytics")`
+
+`AppLogger` recibe un `tag` opcional justamente para **no degradar el tag de Logcat a un prefijo de mensaje**. Verificado: Logcat sigue mostrando `D Analytics: ...` igual que antes de la migración. [source]
 
 Útil en debug para ver el flujo de eventos sin depender de Firebase.
 
@@ -76,20 +81,22 @@ Cada operación itera sobre todos los delegates, despachando a Firebase y Timber
 
 ## DI Binding
 
+Con Koin, en `appModule` (ver [[tools/koin-setup]]):
+
 ```kotlin
-@Module
-@InstallIn(SingletonComponent::class)
-object AnalyticsModule {
-    @Provides @Singleton
-    fun bindAnalyticsHelper(
-        firebase: FirebaseAnalyticsHelper,
-        timber: TimberAnalyticsHelper,
-    ): AnalyticsHelper = CompositeAnalyticsHelper(listOf(firebase, timber))
+single<AnalyticsHelper> {
+    CompositeAnalyticsHelper(
+        listOf(
+            FirebaseAnalyticsHelper(androidContext()),
+            LoggingAnalyticsHelper(),
+        ),
+    )
 }
 ```
 
-- El orden de la lista determina orden de dispatch (primero Firebase, después Timber).
-- Para quitar Firebase en debug, cambiar la implementación sin tocar ViewModels o Screens.
+- El orden de la lista determina orden de dispatch (primero Firebase, después logging).
+- Para quitar Firebase en debug, cambiar la lista sin tocar ViewModels ni Screens.
+- El `iosApp` armará su propio composite, con solo `LoggingAnalyticsHelper` por ahora.
 
 ## Uso en ViewModels
 

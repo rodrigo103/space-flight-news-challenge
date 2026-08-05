@@ -263,9 +263,33 @@ Hallazgos [source]:
 
 > ⚠️ **Regresión conocida y aceptada:** Koin resuelve en runtime, así que un binding faltante ya no rompe el build como hacía Dagger. Peor: los tests de ViewModel construyen sus sujetos a mano y **no tocan Koin**, así que un grafo roto pasa `assembleDebug` y los 46 tests, y falla recién al abrir la app. Mitigación sugerida: un smoke test instrumentado. Detalle en [[tools/koin-setup]]. [gap]
 
-### Fase 5 — Abstracciones de plataforma
+### Fase 5 — Abstracciones de plataforma ✅ COMPLETADA (2026-08-05)
 
-`expect/actual` para conectividad (`NWPathMonitor` en iOS), logging y analytics.
+Con esto **`data/` y `analytics/` desaparecen por completo de `:app`**, que queda solo con `MainActivity`, `MyApplication`, `di/`, `theme/` y `ui/`.
+
+| Pieza | Común | Android | iOS |
+|---|---|---|---|
+| Conectividad | `ConnectivityObserver` (interfaz) + `ConnectivityStatus` | `ConnectivityManager` | `NWPathMonitor` |
+| Analytics | `AnalyticsHelper`, `CompositeAnalyticsHelper`, `LoggingAnalyticsHelper` | `FirebaseAnalyticsHelper` | solo logging |
+| Logging | `expect object AppLogger` | Timber | `NSLog` |
+
+#### Interfaz + factory, no `expect class` [analysis]
+
+`ConnectivityObserver` es una **interfaz con una implementación por plataforma**, no un `expect class`. Motivo: `expect class` exige que los constructores tengan **firmas idénticas** en todos los targets, y acá Android necesita un `Context` mientras que iOS no recibe nada. El mismo patrón que ya usan `createApiService()` y `createDatabase()`.
+
+`AppLogger` sí es `expect object`, porque no tiene constructor y la firma es idéntica en ambos.
+
+#### Detalles que costaron un ciclo de compilación [source]
+
+- **Los valores por defecto van en el `expect`**, no en el `actual` — Kotlin los prohíbe en las implementaciones. Aplica al parámetro `tag` de `AppLogger`.
+- `firebase-analytics` estaba declarado solo en `:app`; al mover `FirebaseAnalyticsHelper` hubo que declararlo en `androidMain` de `:shared`.
+- `NSFileManager` y `nw_path_monitor_*` requieren `@OptIn(ExperimentalForeignApi::class)`.
+
+#### El tag de Logcat se preservó
+
+`TimberAnalyticsHelper` (Android-only) pasó a `LoggingAnalyticsHelper` en `commonMain`, sobre `AppLogger`. Para no degradar el tag `Analytics` a un prefijo de mensaje, `AppLogger` recibió un parámetro `tag` opcional. Verificado en emulador: Logcat sigue mostrando `D Analytics: Screen View: ArticlesList`, igual que antes. [source]
+
+> **Fuera de alcance:** Firebase en iOS necesita su propio SDK del lado Swift. Por ahora iOS compone solo el helper de logging. [gap]
 
 ### Fase 6 — Tests a `commonTest` ✅ COMPLETADA para la capa data (2026-08-05)
 
