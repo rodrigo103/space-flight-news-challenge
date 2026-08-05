@@ -5,12 +5,12 @@ tags:
 
 # Hilt Setup
 
-> **Last verified:** 2026-08-05 | **Verified by:** [source] — módulos recableados contra `:shared`
+> ⚠️ **OBSOLETA desde 2026-08-05.** Hilt fue reemplazado por **Koin** en la Fase 4 de
+> [[patterns/kmp-migration]], porque Hilt es Dagger sobre Android y no compila para Kotlin/Native.
+> Esta página se conserva como registro histórico. Para la DI actual ver [[tools/koin-setup]],
+> que incluye una tabla de equivalencias Hilt → Koin.
 
-> **Nota:** las clases de `:shared` ya no llevan `@Inject constructor` (`javax.inject` no compila
-> para Native), así que `NetworkModule`, `DatabaseModule` y `RepositoryModule` las construyen con
-> `@Provides` explícitos en vez de `@Binds`. Es temporal: la Fase 4 de [[patterns/kmp-migration]]
-> reemplaza Hilt por Koin.
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — configuración histórica, ya no en uso
 
 ## Entries
 

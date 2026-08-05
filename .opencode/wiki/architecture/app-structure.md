@@ -101,7 +101,7 @@ SpaceFlightNews/
 | Domain | `:shared` | `domain/` | Models (`Article`, `ArticleResponse`), repository interface (`ArticlesRepository`), use cases (`GetArticleUseCase`) — KMP `commonMain`, compila para Android e iOS |
 | Data | `:shared` | `data/` | Implementations: remote (`ApiService` con Ktor, `ApiException`, `ApiResult`, `HttpClientFactory`), local (Room KMP entities, DAOs, `RemoteMediator`), repository impl, mappers. Solo `connectivity/` sigue en `:app` (Fase 5) |
 | UI | `:app` | `ui/` | Theme, navigation, common (`UiState`), components, feature screens, previews |
-| DI | `:app` | `di/` | Hilt modules for each layer |
+| DI | ambos | `di/` | `sharedModule()` en `:shared`, `appModule` en `:app` — Koin, ver [[tools/koin-setup]] |
 | Analytics | `:app` | `analytics/` | Interface + Timber + Firebase + Composite pattern |
 
 ## Key characteristics
@@ -110,7 +110,7 @@ SpaceFlightNews/
 - `:shared` depende de `kotlinx-serialization`, `kotlinx-coroutines-core` y `paging-common` — sin Android, sin Timber, **sin `javax.inject`** (no compila para Native)
 - `paging-common` se declara con `api(...)` y no `implementation`, porque `ArticlesRepository` expone `Flow<PagingData<Article>>` en su API pública
 - `:app` depende de `:shared` vía `implementation(project(":shared"))`
-- `GetArticleUseCase` ya no tiene `@Inject constructor`: se construye con un `@Provides` en `AppModule` hasta que la Fase 4 reemplace Hilt por Koin
+- DI con **Koin**, no Hilt: Hilt es Dagger sobre Android y no compila para Native. Ninguna clase lleva anotaciones de inyección
 - Same package names across modules — no import changes needed
 - Min SDK 24, Target SDK 36, Compile SDK 36
 - Kotlin 17 toolchain (both modules)

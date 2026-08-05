@@ -249,9 +249,19 @@ fun getRoomDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase =
 
 KSP por target: `kspAndroid`, `kspIosArm64`, `kspIosX64`, `kspIosSimulatorArm64`. Plugin `androidx.room` + `androidx.sqlite:sqlite-bundled`.
 
-### Fase 4 — DI: Hilt → Koin
+### Fase 4 — DI: Hilt → Koin ✅ COMPLETADA (2026-08-05)
 
-Los 6 módulos Hilt ([[tools/hilt-setup]]) pasan a módulos Koin. `MyApplication` arranca `startKoin`; los ViewModels Android pasan a `koinViewModel()`. Se pierde la verificación del grafo en tiempo de compilación que daba Dagger. [analysis]
+Koin **4.2.2**. Configuración completa en [[tools/koin-setup]]. Los 6 módulos Hilt pasaron a 2 módulos Koin: `sharedModule()` en `commonMain` y `appModule` en `:app`.
+
+Hallazgos [source]:
+
+- `DispatcherModule` era **código muerto** — declaraba `@IoDispatcher`/`@DefaultDispatcher` y nadie los inyectaba. Eliminado en vez de portado.
+- `SavedStateHandle` lo inyecta Koin **automáticamente** por estar en el constructor; las funciones `stateViewModel` están deprecadas.
+- `:app` conservaba dependencias de Room ya muertas (Room vive entero en `:shared`). Eliminadas junto con KSP.
+
+**Verificado más allá de la compilación:** instalado en emulador y ejecutado. Trae artículos en vivo, Room + Paging pueblan la lista, el dual-pane renderiza y el grafo resuelve sin errores.
+
+> ⚠️ **Regresión conocida y aceptada:** Koin resuelve en runtime, así que un binding faltante ya no rompe el build como hacía Dagger. Peor: los tests de ViewModel construyen sus sujetos a mano y **no tocan Koin**, así que un grafo roto pasa `assembleDebug` y los 46 tests, y falla recién al abrir la app. Mitigación sugerida: un smoke test instrumentado. Detalle en [[tools/koin-setup]]. [gap]
 
 ### Fase 5 — Abstracciones de plataforma
 

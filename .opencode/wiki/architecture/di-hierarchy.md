@@ -5,83 +5,55 @@ tags:
 
 # DI Hierarchy
 
-> **Last verified:** 2026-08-04 | **Verified by:** [source] — corregido binding de `AnalyticsModule` (era `TimberAnalyticsHelper`, es `CompositeAnalyticsHelper`)
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — Hilt reemplazado por Koin en la Fase 4 de [[patterns/kmp-migration]]
 
-Jerarquía de módulos de Hilt DI. Todos los módulos están en `com.example.myandroidapp.di`.
-
-RepositoryEntryPoint eliminado — ya no se pasa repository a composables.
+Jerarquía del grafo de inyección. Desde la migración a KMP son **dos módulos Koin**, uno por cada lado de la frontera multiplataforma. Detalles de configuración en [[tools/koin-setup]].
 
 ## Módulos
 
-| Módulo | Scope | Bindings |
+| Módulo | Ubicación | Declara |
 |---|---|---|
-| `AppModule` | Singleton | `isDebug` named binding |
-| `NetworkModule` | Singleton | `OkHttpClient`, `Retrofit`, `ApiService` |
-| `DatabaseModule` | Singleton | `AppDatabase`, `ArticleDao` |
-| `RepositoryModule` | Singleton | `ArticlesRepository` |
-| `DispatcherModule` | Singleton | `CoroutineDispatchers` provider |
-| `AnalyticsModule` | Singleton | `AnalyticsHelper` → `CompositeAnalyticsHelper(listOf(firebase, timber))` |
+| `sharedModule(enableHttpLogging)` | `:shared/commonMain` | `ApiService`, `ArticleDao`, `ArticlesRepository`, `GetArticleUseCase` |
+| `appModule` | `:app` | `AppDatabase`, `ConnectivityObserver`, `AnalyticsHelper`, los 3 ViewModels |
 
-## Dependencies entre módulos
+## Dependencias entre módulos
 
 ```
-AppModule (isDebug)
-├── NetworkModule (OkHttp, Retrofit, ApiService)
-├── DatabaseModule (Room, DAOs)
-│   └── DispatcherModule (Dispatchers)
-└── RepositoryModule (ArticlesRepository)
-    ├── NetworkModule
-    ├── DatabaseModule
-    └── DispatcherModule
+appModule
+ ├── AppDatabase ──────────┐   (necesita Context, por eso vive acá)
+ ├── ConnectivityObserver  │
+ ├── AnalyticsHelper       │
+ └── ViewModels            │
+      ↓ get()              │
+sharedModule               │
+ ├── ApiService            │
+ ├── ArticleDao ←──────────┘   get<AppDatabase>().articleDao()
+ ├── ArticlesRepository
+ └── GetArticleUseCase
 ```
 
-## Entry points
+El único punto donde el grafo compartido depende del consumidor es `AppDatabase`: `sharedModule` la resuelve con `get()` y cada plataforma la registra, porque construirla necesita input propio de cada una (`Context` en Android, ruta de `NSFileManager` en iOS). [analysis]
 
-- `MainActivity` — `@AndroidEntryPoint`
-- `MyApplication` — `@HiltAndroidApp`
+## Arranque
 
-## ViewModel multibinding
+`MyApplication.onCreate()` llama a `startKoin { }` con `androidContext()` y ambos módulos. Ya no hay `@HiltAndroidApp` ni `@AndroidEntryPoint`.
 
-A escala, se puede usar `@IntoMap` + `@ViewModelKey` para registrar ViewModels automáticamente:
+## Scopes
 
-```kotlin
-@Module
-abstract class ViewModelModule {
-    @Binds @IntoMap @ViewModelKey(ArticlesViewModel::class)
-    abstract fun bindArticlesViewModel(viewModel: ArticlesViewModel): ViewModel
+| Koin | Significado |
+|---|---|
+| `single { }` | Instancia única por aplicación (equivale a `@Singleton` de Hilt) |
+| `factory { }` | Instancia nueva en cada resolución |
+| `viewModel { }` | Atado al ciclo de vida del `ViewModelStoreOwner` |
 
-    @Binds @IntoMap @ViewModelKey(DetailViewModel::class)
-    abstract fun bindDetailViewModel(viewModel: DetailViewModel): ViewModel
-}
-```
+`GetArticleUseCase` es `factory` porque no tiene estado; el resto son `single`.
 
-## Multi-environment Factory Pattern
+## ⚠️ El grafo no se valida al compilar
 
-Para apps que necesitan comportamientos distintos según país/entorno:
-
-```
-interface EnvironmentFactory {
-    fun provideApiClient(): RetrofitApiClient
-    fun provideAuthInterceptor(): Interceptor
-}
-
-class EnvironmentFactoryProd : EnvironmentFactory { /* API real */ }
-class EnvironmentFactoryDemo : EnvironmentFactory { /* mock API */ }
-```
-
-Cada entorno tiene su propia autenticación, endpoints y reglas de negocio. El Abstract Factory pattern permite switchear todo sin `if/else`.
-
-## Scopes custom
-
-Para componentes con ciclo de vida propio (ej: sesión de usuario):
-
-```kotlin
-@Scope
-@Retention(AnnotationRetention.RUNTIME)
-annotation class SessionScope
-```
+Ver [[tools/koin-setup]]. Es el costo aceptado de esta migración: Dagger verificaba el grafo en tiempo de compilación, Koin resuelve por reflexión en runtime. Un binding faltante pasa el build y los 46 tests, y falla al abrir la app. [gap]
 
 ## Ver también
 
-- [[tools/hilt-setup]] — Detalles de los módulos Hilt
-- [[architecture/clean-architecture-guide]] — Clean Architecture
+- [[tools/koin-setup]] — Configuración de Koin y equivalencias con Hilt
+- [[architecture/app-structure]] — Estructura de módulos
+- [[patterns/kmp-migration]] — Plan y estado de la migración

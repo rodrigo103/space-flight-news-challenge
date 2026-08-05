@@ -1,5 +1,16 @@
 # Changelog del Wiki
 
+## 2026-08-05 (2)
+
+- **Fase 4 de [[patterns/kmp-migration]] completada** (commit `e66b2a6`) — Hilt reemplazado por Koin 4.2.2
+  - Creada [[tools/koin-setup]] — módulos, arranque, tabla de equivalencias Hilt → Koin, y las dos decisiones de diseño: el flag de logging como parámetro en vez de qualifier, y `AppDatabase` registrada por la plataforma porque necesita `Context`
+  - Reescrita [[architecture/di-hierarchy]] — de 6 módulos Hilt a 2 módulos Koin, con el diagrama de cómo `sharedModule` resuelve `AppDatabase` del consumidor
+  - [[tools/hilt-setup]] marcada **obsoleta**, conservada como registro histórico
+  - **Verificado en emulador**: la app arranca, trae artículos en vivo, Room + Paging pueblan la lista y el dual-pane renderiza. Un swap de DI que solo compila no prueba nada
+  - **Regresión documentada**: Koin valida en runtime. Los tests de ViewModel construyen sus sujetos a mano y no tocan Koin, así que un grafo roto pasa el build y los 46 tests y falla recién al abrir. Registrada como `[gap]` con smoke test instrumentado como mitigación
+  - Hallazgos: `DispatcherModule` era código muerto (nadie inyectaba esos dispatchers); `:app` conservaba dependencias de Room ya inútiles; `SavedStateHandle` lo inyecta Koin solo
+  - Actualizadas [[architecture/app-structure]] e [[index]]
+
 ## 2026-08-05
 
 - **Fases 2+3 de [[patterns/kmp-migration]] completadas** (commit `cb47186`) — capa data entera a `:shared/commonMain`, build de vuelta en verde

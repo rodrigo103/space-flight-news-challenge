@@ -35,7 +35,8 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 
 - [[tools/retrofit-setup]] — ⚠️ obsoleta: Retrofit fue reemplazado por Ktor
 - [[tools/detekt-setup]] — Detekt lint + Compose rules
-- [[tools/hilt-setup]] — Hilt DI + módulos
+- [[tools/koin-setup]] — Koin DI: módulos, equivalencias con Hilt, y el costo de perder validación en compilación
+- [[tools/hilt-setup]] — ⚠️ obsoleta: Hilt fue reemplazado por Koin
 - [[tools/key-dependencies]] — Resumen de dependencias clave + decisiones técnicas
 - [[tools/testing-strategy]] — Testing patterns: MockK, MockWebServer, Turbine, Semantic Properties
 
