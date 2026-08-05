@@ -3,9 +3,8 @@ package com.example.myandroidapp.domain.usecase
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.domain.repository.ArticlesRepository
 import kotlinx.coroutines.withTimeoutOrNull
-import javax.inject.Inject
 
-class GetArticleUseCase @Inject constructor(
+class GetArticleUseCase(
     private val repository: ArticlesRepository,
 ) {
     companion object {

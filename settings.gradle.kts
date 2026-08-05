@@ -19,4 +19,4 @@ plugins {
 
 rootProject.name = "SpaceFlightNews"
 include(":app")
-include(":domain")
+include(":shared")

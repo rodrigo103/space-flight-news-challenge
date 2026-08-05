@@ -99,7 +99,7 @@ Rompen la compilación para iOS. No son opcionales. [source]
 | `data/connectivity/ConnectivityObserver.kt` | `ConnectivityManager` de Android | `expect/actual`: Android igual, iOS con `NWPathMonitor` |
 | `analytics/FirebaseAnalyticsHelper.kt` | SDK de Firebase Android | Interfaz común; impl Firebase en `androidMain`, iOS en Swift o no-op |
 
-> **Nota:** `:domain` no es tan "puro" como afirma [[architecture/app-structure]] — importa `androidx.paging.PagingData` y `javax.inject`. Lo primero es KMP-compatible; lo segundo no. [source]
+> **Nota:** `:domain` importaba `androidx.paging.PagingData` y `javax.inject`. Lo primero es KMP-compatible (`paging-common` 3.3.5 publica variantes `iosArm64`, `iosX64` y `iosSimulatorArm64`, verificado en su Gradle module metadata); lo segundo no. Resuelto en la Fase 1. [source]
 
 ---
 
@@ -121,11 +121,33 @@ Era el paso de mayor riesgo porque SKIE es un plugin del compilador de Kotlin/Na
 
 Falta: rama `feat/kmp-migration` y descarga del runtime de simulador (`xcodebuild -downloadPlatform iOS`).
 
-### Fase 1 — Módulo `:shared`
+### Fase 1 — Módulo `:shared` ✅ COMPLETADA (2026-08-04)
 
 Crear el módulo KMP con los 4 targets, mover `:domain` a `commonMain`, sacar `javax.inject`.
 
-**Verificar:** `:app` compila igual + `linkDebugFrameworkIosSimulatorArm64` linkea.
+**Hecho** [source]:
+
+- `shared/build.gradle.kts` con `kotlin-multiplatform` + `com.android.kotlin.multiplatform.library` (el plugin recomendado con AGP 9; el viejo `com.android.library` está deprecado para KMP) y bloque `androidLibrary {}`
+- 4 targets; los iOS producen `Shared.framework` (`isStatic = true`)
+- Fuentes movidas con `git mv` (historial preservado): `domain/src/main/java/...` → `shared/src/commonMain/kotlin/...`
+- `:domain` eliminado; `settings.gradle.kts` y `app/build.gradle.kts` apuntan a `:shared`
+- `paging-common` declarado con `api(...)`, no `implementation` — `ArticlesRepository` expone `Flow<PagingData<Article>>` en su API pública y `:app` necesita `PagingData` en el classpath de compilación
+- `javax.inject` eliminado de `GetArticleUseCase`; puente `@Provides` en `AppModule` hasta la Fase 4
+
+**Verificado:** `:app:assembleDebug` ✅ · `linkDebugFrameworkIosSimulatorArm64` ✅ · 40 tests ✅ · detekt ✅
+
+#### Confirmación empírica del problema de `kotlin.Result`
+
+El header ObjC generado confirma —y agrava— lo documentado arriba. `getArticle(id): Result<Article>` se exporta así: [source]
+
+```objc
+- (void)getArticleId:(int32_t)id
+    completionHandler:(void (^)(id _Nullable_result, NSError * _Nullable))completionHandler;
+```
+
+El tipo de retorno se borró a **`id`** (objeto ObjC sin tipo → `Any?` en Swift). No se pierde solo el `Result`: se pierde también `Article`. **Y compila sin errores ni warnings**, así que el problema no aparece hasta que se escribe el Swift. Refuerza que `ApiResult` (Fase 2) no es cosmético sino necesario. [analysis]
+
+> **Deuda conocida:** detekt no está aplicado a `:shared` — `./gradlew detekt` solo analiza `:app`. Resolver en la Fase 8.
 
 ### Fase 2 — Red: Retrofit → Ktor
 

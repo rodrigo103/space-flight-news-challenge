@@ -1,5 +1,17 @@
 # Changelog del Wiki
 
+## 2026-08-04 (3)
+
+- **Fase 1 de [[patterns/kmp-migration]] completada** — `:domain` (Kotlin/JVM) reemplazado por `:shared` (KMP)
+  - `shared/build.gradle.kts` con `kotlin-multiplatform` + `com.android.kotlin.multiplatform.library` (plugin recomendado con AGP 9) y 4 targets; los iOS producen `Shared.framework`
+  - Fuentes movidas con `git mv` (historial preservado); `:domain` eliminado
+  - `javax.inject` eliminado de `GetArticleUseCase` (no compila para Native) + puente `@Provides` en `AppModule` hasta la Fase 4
+  - `paging-common` pasa a `api(...)`: `ArticlesRepository` expone `Flow<PagingData<Article>>` en su API pública
+  - Verificado: `:app:assembleDebug` ✅, `linkDebugFrameworkIosSimulatorArm64` ✅, 40 tests ✅, detekt ✅
+  - **Confirmación empírica del problema de `kotlin.Result`**: en el header ObjC generado, `Result<Article>` se borra a `id` (`Any?` en Swift) — se pierde también `Article`, y compila sin warnings. Documentado en la página
+  - Deuda registrada: detekt no está aplicado a `:shared`
+  - Actualizado [[architecture/app-structure]] — estructura de módulos, tabla de capas, características y sección de modularización
+
 ## 2026-08-04 (2)
 
 - Creada [[patterns/kmp-migration]] — plan de migración a Kotlin Multiplatform

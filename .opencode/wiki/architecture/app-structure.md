@@ -5,9 +5,9 @@ tags:
 
 # App Structure
 
-> **Last verified:** 2026-08-04 | **Verified by:** [source] — proyecto renombrado a `SpaceFlightNews` (`settings.gradle.kts`)
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — `:domain` (Kotlin/JVM) reemplazado por `:shared` (KMP) en la Fase 1 de [[patterns/kmp-migration]]
 
-Estructura del proyecto `SpaceFlightNews`. Proyecto **bimódulo** (`:app` + `:domain`) con Jetpack Compose, organizado en 3 capas (domain, data, ui) + di + analytics.
+Estructura del proyecto `SpaceFlightNews`. Proyecto **bimódulo** (`:app` + `:shared`) con Jetpack Compose, organizado en 3 capas (domain, data, ui) + di + analytics.
 
 > **Nota:** el nombre del proyecto (`rootProject.name`) es `SpaceFlightNews` desde el commit `63964a0`. Los nombres de paquete siguen siendo `com.example.myandroidapp` — no se renombraron.
 
@@ -15,19 +15,19 @@ Estructura del proyecto `SpaceFlightNews`. Proyecto **bimódulo** (`:app` + `:do
 
 ```
 SpaceFlightNews/
-├── :domain/                        # Gradle module — pure Kotlin/JVM, KMP-ready
-│   └── build.gradle.kts            # kotlin-jvm + kotlinx.serialization + coroutines + paging-common + javax.inject
+├── :shared/                        # Gradle module — KMP (androidTarget + iosX64/iosArm64/iosSimulatorArm64)
+│   └── build.gradle.kts            # kotlin-multiplatform + android-kotlin-multiplatform-library + serialization
 ├── :app/                           # Gradle module — Android app
-│   └── build.gradle.kts            # Depends on :domain
+│   └── build.gradle.kts            # Depends on :shared
 │
-:domain/src/main/java/com/example/myandroidapp/
+:shared/src/commonMain/kotlin/com/example/myandroidapp/
 └── domain/
     ├── model/
     │   └── Article.kt              # Domain model + ArticleResponse, Author, Socials
     ├── repository/
     │   └── ArticlesRepository.kt   # Repository interface
     └── usecase/
-        └── GetArticleUseCase.kt    # Timeout + fetch article by ID (no Timber, no Android deps)
+        └── GetArticleUseCase.kt    # Timeout + fetch article by ID (sin Timber, sin Android, sin javax.inject)
 
 :app/src/main/java/com/example/myandroidapp/
 ├── MyApplication.kt                # Hilt Application
@@ -98,7 +98,7 @@ SpaceFlightNews/
 
 | Layer | Module | Package | Contents |
 |-------|--------|---------|----------|
-| Domain | `:domain` | `domain/` | Models (`Article`, `ArticleResponse`), repository interface (`ArticlesRepository`), use cases (`GetArticleUseCase`) — pure Kotlin/JVM, KMP-ready |
+| Domain | `:shared` | `domain/` | Models (`Article`, `ArticleResponse`), repository interface (`ArticlesRepository`), use cases (`GetArticleUseCase`) — KMP `commonMain`, compila para Android e iOS |
 | Data | `:app` | `data/` | Implementations: remote (`ApiService`, `ApiException`, `HttpErrorCallAdapter`), local (`Room` entities, DAOs, `RemoteMediator`), repository impl (`DefaultArticlesRepository`), mappers |
 | UI | `:app` | `ui/` | Theme, navigation, common (`UiState`), components, feature screens, previews |
 | DI | `:app` | `di/` | Hilt modules for each layer |
@@ -106,10 +106,11 @@ SpaceFlightNews/
 
 ## Key characteristics
 
-- **Two modules**: `:domain` (pure Kotlin/JVM) and `:app` (Android app)
-- `:domain` depends only on `kotlinx-serialization`, `kotlinx-coroutines-core`, `paging-common`, `javax.inject` — no Android, no Timber
-- `:app` depends on `:domain` via `implementation(project(":domain"))`
-- Hilt automatically injects domain classes (`GetArticleUseCase`, `ArticlesRepository`) into `:app` ViewModels
+- **Two modules**: `:shared` (KMP) y `:app` (Android app)
+- `:shared` depende de `kotlinx-serialization`, `kotlinx-coroutines-core` y `paging-common` — sin Android, sin Timber, **sin `javax.inject`** (no compila para Native)
+- `paging-common` se declara con `api(...)` y no `implementation`, porque `ArticlesRepository` expone `Flow<PagingData<Article>>` en su API pública
+- `:app` depende de `:shared` vía `implementation(project(":shared"))`
+- `GetArticleUseCase` ya no tiene `@Inject constructor`: se construye con un `@Provides` en `AppModule` hasta que la Fase 4 reemplace Hilt por Koin
 - Same package names across modules — no import changes needed
 - Min SDK 24, Target SDK 36, Compile SDK 36
 - Kotlin 17 toolchain (both modules)
@@ -121,10 +122,10 @@ SpaceFlightNews/
 ### Current state (incremental, 2 modules)
 
 ```
-:domain  ←  :app
+:shared (KMP)  ←  :app
 ```
 
-This is the **minimal viable modularization** that demonstrates separation of concerns at the Gradle level. `:domain` is pure Kotlin/JVM — it can be reused in a KMP shared module, backend Ktor service, or unit-tested without Android runtime.
+`:shared` es un módulo Kotlin Multiplatform con 4 targets (`androidTarget`, `iosX64`, `iosArm64`, `iosSimulatorArm64`) que produce un framework `Shared.framework` para iOS. Hoy contiene solo la capa domain; las capas data y DI se migran en las fases 2-4 de [[patterns/kmp-migration]]. [source]
 
 ### Phase 2 — Feature-based (3+ modules)
 

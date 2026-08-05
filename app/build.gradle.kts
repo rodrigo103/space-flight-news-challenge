@@ -113,7 +113,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
 }
 
 dependencies {
-    implementation(project(":domain"))
+    implementation(project(":shared"))
     implementation(libs.firebase.analytics)
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
