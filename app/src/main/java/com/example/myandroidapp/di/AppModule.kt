@@ -4,7 +4,7 @@ import android.content.pm.ApplicationInfo
 import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.analytics.CompositeAnalyticsHelper
 import com.example.myandroidapp.analytics.FirebaseAnalyticsHelper
-import com.example.myandroidapp.analytics.TimberAnalyticsHelper
+import com.example.myandroidapp.analytics.LoggingAnalyticsHelper
 import com.example.myandroidapp.data.connectivity.AndroidConnectivityObserver
 import com.example.myandroidapp.data.connectivity.ConnectivityObserver
 import com.example.myandroidapp.data.local.createDatabase
@@ -29,7 +29,7 @@ val appModule = module {
         CompositeAnalyticsHelper(
             listOf(
                 FirebaseAnalyticsHelper(androidContext()),
-                TimberAnalyticsHelper(),
+                LoggingAnalyticsHelper(),
             ),
         )
     }

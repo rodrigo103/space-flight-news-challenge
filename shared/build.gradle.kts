@@ -56,6 +56,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.timber)
+            // FirebaseAnalyticsHelper vive acá: el SDK de Firebase es Android-only.
+            implementation(libs.firebase.analytics)
         }
 
         iosMain.dependencies {
