@@ -49,6 +49,8 @@ kotlin {
             implementation(libs.room.runtime)
             implementation(libs.room.paging)
             implementation(libs.androidx.sqlite.bundled)
+
+            api(libs.koin.core)
         }
 
         androidMain.dependencies {
