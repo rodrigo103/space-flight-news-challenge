@@ -5,6 +5,7 @@ import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.analytics.CompositeAnalyticsHelper
 import com.example.myandroidapp.analytics.FirebaseAnalyticsHelper
 import com.example.myandroidapp.analytics.TimberAnalyticsHelper
+import com.example.myandroidapp.data.connectivity.AndroidConnectivityObserver
 import com.example.myandroidapp.data.connectivity.ConnectivityObserver
 import com.example.myandroidapp.data.local.createDatabase
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailPaneViewModel
@@ -22,7 +23,7 @@ val appModule = module {
     // la consume con get().
     single { createDatabase(androidContext()) }
 
-    single { ConnectivityObserver(androidContext()) }
+    single<ConnectivityObserver> { AndroidConnectivityObserver(androidContext()) }
 
     single<AnalyticsHelper> {
         CompositeAnalyticsHelper(

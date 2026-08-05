@@ -10,13 +10,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 
-class ConnectivityObserver(
+class AndroidConnectivityObserver(
     context: Context,
-) {
+) : ConnectivityObserver {
+
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    val status: Flow<ConnectivityStatus> = callbackFlow {
+    override val status: Flow<ConnectivityStatus> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 trySend(ConnectivityStatus.Available)
