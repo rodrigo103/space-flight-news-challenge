@@ -1,0 +1,229 @@
+---
+tags:
+  - wiki/pattern
+  - architecture
+  - kmp
+---
+
+# KMP Migration
+
+> **Last verified:** 2026-08-04 | **Verified by:** [analysis] — plan basado en docs oficiales de Room KMP, Ktor y SKIE + lectura del código actual. Fase 0 (matriz de versiones) verificada y sin bloqueos.
+
+## Contexto
+
+Plan para migrar el proyecto de Android puro a **Kotlin Multiplatform**, compartiendo la lógica de negocio entre Android e iOS y manteniendo **UI nativa en cada plataforma** (Compose en Android, SwiftUI en iOS).
+
+Este documento reemplaza la sección especulativa "Phase 3 — KMP feature-based" de [[architecture/app-structure]], que asumía SQLDelight y Ktor para todo. La investigación contra docs actuales cambió dos decisiones de fondo: **Room ahora soporta KMP oficialmente** (no hace falta SQLDelight) y **la UI no se comparte** (decisión de producto, no técnica).
+
+### Decisiones tomadas
+
+| Decisión | Elección | Por qué |
+|---|---|---|
+| Qué se comparte | Solo lógica (domain + data) | UI nativa en cada plataforma; los ViewModels quedan por plataforma |
+| UI de iOS | SwiftUI | Look & feel nativo; las screens Compose actuales no se reutilizan en iOS |
+| DI | Koin en todo el proyecto | Hilt no compila para Native; una sola historia de DI |
+| Tests | Migrar a `commonTest` con fakes | Única forma de testear la lógica compartida en ambas plataformas |
+| Base de datos | Room KMP (no SQLDelight) | Room 2.8+ soporta KMP — DAOs y entidades sobreviven [source] |
+| HTTP | Ktor plano | Ktorfit es la alternativa si se quiere conservar la sintaxis anotada de Retrofit |
+
+---
+
+## Arquitectura objetivo
+
+```
+:shared (KMP)  ──►  domain + data     ← androidTarget, iosX64, iosArm64, iosSimulatorArm64
+      │
+      ├──► :app (Android)   Compose + ViewModels actuales, DI con Koin
+      └──► iosApp (Swift)   SwiftUI + ObservableObjects, consume :shared vía SKIE
+```
+
+La presentación **no** se comparte. Android mantiene sus ViewModels (`ArticlesListViewModel`, `ArticleDetailViewModel`, `ArticleDetailPaneViewModel`); iOS tiene los suyos en Swift como `ObservableObject`. Es lo coherente con "lógica compartida + UI nativa" y evita el puente más frágil de KMP: exponer ViewModels de AndroidX a Swift. [analysis]
+
+---
+
+## Los tres problemas de interoperabilidad Kotlin ↔ Swift
+
+Son el corazón técnico de la migración. Sin resolverlos, el framework compila pero es inusable desde Swift.
+
+### 1. `kotlin.Result` no se exporta al framework ObjC
+
+`Result` es una **value class**, y las value classes no se exportan a Objective-C/Swift. Toda la interfaz `ArticlesRepository` la devuelve hoy [source]:
+
+```kotlin
+suspend fun getArticles(limit: Int = 20, offset: Int = 0): Result<List<Article>>
+suspend fun getArticle(id: Int): Result<Article>
+```
+
+**Solución:** sealed class propia en `commonMain`, que SKIE convierte en enum exhaustivo de Swift preservando la jerarquía `ApiException`:
+
+```kotlin
+sealed interface ApiResult<out T> {
+    data class Success<T>(val data: T) : ApiResult<T>
+    data class Failure(val error: ApiException) : ApiResult<Nothing>
+}
+
+// Puente para que el código Android existente cambie lo mínimo
+fun <T> ApiResult<T>.toResult(): Result<T> = when (this) {
+    is ApiResult.Success -> Result.success(data)
+    is ApiResult.Failure -> Result.failure(error)
+}
+```
+
+### 2. `PagingData` no es consumible desde SwiftUI
+
+`paging-common` sí es KMP y compila para iOS, pero **no existe equivalente de `collectAsLazyPagingItems()` en SwiftUI**. Intentar consumir `Flow<PagingData<Article>>` desde Swift no es viable. [analysis]
+
+**Solución:** `getArticlesPaged()` se queda en shared y la usa solo Android. iOS usa el `getArticles(limit, offset)` que **ya existe** en la interfaz — no hay que inventar API nueva.
+
+### 3. `Flow` y `suspend` desde Swift
+
+Los resuelve **SKIE** (plugin del compilador de Kotlin/Native, de Touchlab) [source]:
+
+- `Flow`, `StateFlow` y `MutableStateFlow` → clases Swift que implementan `AsyncSequence`, preservando el tipo genérico
+- Funciones `suspend` → `async`/`await` de Swift, con cancelación bidireccional (cancelar el `Task` cancela la corrutina)
+- Sealed classes → enums exhaustivos de Swift
+
+---
+
+## Bloqueadores en el código actual
+
+Rompen la compilación para iOS. No son opcionales. [source]
+
+| Archivo | Problema | Solución |
+|---|---|---|
+| `domain/build.gradle.kts` | `javax.inject` es JVM-only | Eliminar (Koin no lo necesita) |
+| `data/local/ArticleRemoteMediator.kt:10-12` | Captura `java.net.UnknownHostException`, `ConnectException`, `SocketTimeoutException` | Excepciones comunes de Ktor |
+| `data/repository/DefaultArticlesRepository.kt:16` | `Timber` es JVM-only | Logger común (Napier/Kermit) o `expect/actual` |
+| `data/remote/HttpErrorCallAdapter.kt` | `java.lang.reflect`, Retrofit, OkHttp | `HttpResponseValidator` de Ktor, mismo mapeo status → `ApiException` |
+| `data/remote/ApiService.kt` | Interfaz Retrofit anotada | Cliente Ktor |
+| `data/connectivity/ConnectivityObserver.kt` | `ConnectivityManager` de Android | `expect/actual`: Android igual, iOS con `NWPathMonitor` |
+| `analytics/FirebaseAnalyticsHelper.kt` | SDK de Firebase Android | Interfaz común; impl Firebase en `androidMain`, iOS en Swift o no-op |
+
+> **Nota:** `:domain` no es tan "puro" como afirma [[architecture/app-structure]] — importa `androidx.paging.PagingData` y `javax.inject`. Lo primero es KMP-compatible; lo segundo no. [source]
+
+---
+
+## Fases
+
+Cada fase deja el proyecto compilando y verificable.
+
+### Fase 0 — Prerequisitos y matriz de versiones ✅ VERIFICADA
+
+Era el paso de mayor riesgo porque SKIE es un plugin del compilador de Kotlin/Native y es estricto con la versión de Kotlin. **Verificado el 2026-08-04 contra la doc en vivo: no hay bloqueo.** [source]
+
+| Componente | Estado |
+|---|---|
+| **SKIE 0.10.14** (release 2026-07-27) | Soporta Kotlin **2.0.0 → 2.4.10**. El proyecto está en 2.3.20 → **compatible** |
+| Room KMP | 2.8.4 + `sqlite-bundled` 2.6.2 (versiones de la doc oficial de Room KMP) |
+| Ktor, Koin, KSP | A fijar al implementar; sin incompatibilidad conocida |
+
+> **Cuidado con las fuentes:** el índice de documentación de ctx7 devolvía "compatible hasta Kotlin 2.3.10", lo que habría bloqueado el plan. La página en vivo dice 2.4.10. Verificar versiones contra la fuente en vivo, no contra índices cacheados. [analysis]
+
+Falta: rama `feat/kmp-migration` y descarga del runtime de simulador (`xcodebuild -downloadPlatform iOS`).
+
+### Fase 1 — Módulo `:shared`
+
+Crear el módulo KMP con los 4 targets, mover `:domain` a `commonMain`, sacar `javax.inject`.
+
+**Verificar:** `:app` compila igual + `linkDebugFrameworkIosSimulatorArm64` linkea.
+
+### Fase 2 — Red: Retrofit → Ktor
+
+Cliente en `commonMain`; engine OkHttp en `androidMain`, **Darwin** en `iosMain` [source]. `HttpResponseValidator` reemplaza al `CallAdapter` con el mismo mapeo de status codes. Introducir `ApiResult`.
+
+```kotlin
+HttpClient(engine) {
+    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+    HttpResponseValidator {
+        // status → ApiException.BadRequest / Unauthorized / NotFound / Conflict / ServerError
+    }
+}
+```
+
+### Fase 3 — Persistencia: Room → Room KMP
+
+Room soporta KMP desde 2.8 [source]. **Los DAOs, entidades y el RemoteMediator sobreviven casi intactos** — el mayor ahorro respecto de migrar a SQLDelight.
+
+```toml
+room = "2.8.4"
+sqlite = "2.6.2"
+```
+
+```kotlin
+// commonMain
+@Database(entities = [ArticleEntity::class], version = 1)
+@ConstructedBy(AppDatabaseConstructor::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun articleDao(): ArticleDao
+}
+
+@Suppress("KotlinNoActualForExpect")
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase>
+
+fun getRoomDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase =
+    builder.setDriver(BundledSQLiteDriver())
+        .setQueryCoroutineContext(Dispatchers.IO)
+        .build()
+```
+
+KSP por target: `kspAndroid`, `kspIosArm64`, `kspIosX64`, `kspIosSimulatorArm64`. Plugin `androidx.room` + `androidx.sqlite:sqlite-bundled`.
+
+### Fase 4 — DI: Hilt → Koin
+
+Los 6 módulos Hilt ([[tools/hilt-setup]]) pasan a módulos Koin. `MyApplication` arranca `startKoin`; los ViewModels Android pasan a `koinViewModel()`. Se pierde la verificación del grafo en tiempo de compilación que daba Dagger. [analysis]
+
+### Fase 5 — Abstracciones de plataforma
+
+`expect/actual` para conectividad (`NWPathMonitor` en iOS), logging y analytics.
+
+### Fase 6 — Tests a `commonTest`
+
+MockK no corre en Native y MockWebServer es solo JVM. Se reescriben con **fakes a mano + `MockEngine` de Ktor + Turbine** (que sí es KMP) [source]. Los 14 archivos actuales se migran; los instrumentados de Compose se quedan en `:app`. Ver [[tools/testing-strategy]].
+
+### Fase 7 — `iosApp`
+
+Proyecto SwiftUI, SKIE configurado, un `ObservableObject` por pantalla consumiendo `:shared`. Lista + detalle con paridad funcional.
+
+### Fase 8 — CI, detekt y wiki
+
+Jobs de iOS en CI, detekt para los nuevos source sets, y actualizar las páginas que quedan obsoletas: [[architecture/app-structure]], [[architecture/data-layer]], [[architecture/di-hierarchy]], [[tools/retrofit-setup]], [[tools/hilt-setup]], [[patterns/room-paging]], [[tools/testing-strategy]].
+
+---
+
+## Verificación end-to-end
+
+```bash
+./gradlew :app:assembleDebug
+./gradlew :shared:allTests                              # commonTest en JVM Y en simulador iOS
+./gradlew :shared:linkDebugFrameworkIosSimulatorArm64
+./gradlew detekt
+# + build del iosApp desde Xcode
+```
+
+Paridad funcional en Android: lista, búsqueda, detalle, offline, tablet.
+
+---
+
+## Riesgos
+
+1. ~~**Matriz de versiones (Fase 0)**~~ — **Resuelto 2026-08-04**: SKIE 0.10.14 soporta Kotlin 2.0.0–2.4.10, y el proyecto está en 2.3.20. Ya no bloquea. [source]
+2. **Alcance real** — es una reescritura completa de las capas data y DI, no un refactor incremental. La Fase 6 sola son 14 archivos de test. **Este pasa a ser el riesgo principal.**
+3. **Paging solo en Android** — la lista de iOS usa paginación por offset manual, sin la infraestructura de Paging 3.
+4. **Firebase en iOS** — requiere SDK aparte del lado Swift, o aceptar no-op.
+
+## Estado del entorno
+
+[source] verificado 2026-08-04:
+
+- Xcode 26.6, SDK iOS 26.5, `xcode-select` apuntando a `Xcode.app`, licencia aceptada
+- **Sin runtimes de simulador instalados** — el código iOS compila pero no corre hasta `xcodebuild -downloadPlatform iOS`
+- Kotlin 2.3.20, AGP 9.2.1, Room 2.7.1, Paging 3.3.5, JDK 21
+
+## Ver también
+
+- [[architecture/app-structure]] — Estructura actual y roadmap de modularización
+- [[architecture/data-layer]] — Data layer que se migra
+- [[patterns/room-paging]] — Room + Paging 3 + RemoteMediator
+- [[tools/retrofit-setup]] — Capa HTTP que reemplaza Ktor
+- [[tools/hilt-setup]] — DI que reemplaza Koin
+- [[tools/testing-strategy]] — Testing actual, base de la Fase 6

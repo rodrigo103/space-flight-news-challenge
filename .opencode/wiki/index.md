@@ -23,6 +23,7 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 - [[patterns/mvvm-repository]] — MVVM + Repository pattern
 - [[patterns/mvvm-vs-mvi]] — Comparativa MVVM vs MVI en Android
 - [[patterns/mvi-migration]] — Plan de migración MVVM → MVI (completo + Lite)
+- [[patterns/kmp-migration]] — Plan de migración a Kotlin Multiplatform (lógica compartida + SwiftUI)
 - [[patterns/error-handling]] — Manejo de errores con Result + UiState + CallAdapter
 - [[patterns/room-paging]] — Room + Paging 3 + RemoteMediator
 - [[patterns/search-strategy]] — Búsqueda local vs API: decisión arquitectónica

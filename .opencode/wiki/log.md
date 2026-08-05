@@ -1,5 +1,21 @@
 # Changelog del Wiki
 
+## 2026-08-04 (2)
+
+- Creada [[patterns/kmp-migration]] — plan de migración a Kotlin Multiplatform
+  - **Arquitectura**: `:shared` (domain + data) con 4 targets; UI nativa por plataforma (Compose en Android, SwiftUI en iOS); la presentación no se comparte
+  - **Room KMP en vez de SQLDelight** — Room 2.8.4 soporta KMP con `BundledSQLiteDriver` + `@ConstructedBy` + KSP por target. DAOs, entidades y RemoteMediator sobreviven. Corrige la suposición de la "Phase 3" de [[architecture/app-structure]]
+  - **Tres problemas de interop Kotlin↔Swift documentados**: `kotlin.Result` no se exporta (es value class) → sealed `ApiResult`; `PagingData` no es consumible desde SwiftUI → iOS usa `getArticles(limit, offset)`; `Flow`/`suspend` → SKIE
+  - **Bloqueadores concretos** — tabla archivo por archivo: `javax.inject` en `:domain`, excepciones `java.net.*` en `ArticleRemoteMediator`, Timber en el repositorio, Retrofit/OkHttp, `ConnectivityManager`, Firebase
+  - 8 fases con criterio de verificación, riesgos y estado del entorno (Xcode 26.6 instalado, sin runtimes de simulador)
+  - Decisiones del usuario registradas: lógica compartida + SwiftUI nativa, Koin en todo el proyecto, tests migrados a `commonTest` con fakes
+  - [[index]] actualizado con link a la nueva página
+
+- Fase 0 del plan KMP ejecutada (verificación de versiones, sin cambios de código)
+  - **SKIE 0.10.14 soporta Kotlin 2.0.0 → 2.4.10**; el proyecto está en 2.3.20 → sin bloqueo. El riesgo principal del plan queda despejado
+  - Lección registrada en la página: el índice de ctx7 devolvía "hasta Kotlin 2.3.10" (desactualizado) y habría hecho abortar el plan. La página en vivo dice 2.4.10 — verificar versiones contra la fuente en vivo, no contra índices cacheados
+  - Entorno verificado: Xcode 26.6 + SDK iOS 26.5 instalados y licencia aceptada, pero **sin runtimes de simulador** (falta `xcodebuild -downloadPlatform iOS`)
+
 ## 2026-08-04
 
 - Wiki audit: contradicciones entre wiki y código, verificadas una por una contra el source
