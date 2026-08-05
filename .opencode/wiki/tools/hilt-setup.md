@@ -5,7 +5,12 @@ tags:
 
 # Hilt Setup
 
-> **Last verified:** 2026-08-04 | **Verified by:** [source] — corregido binding de `AnalyticsModule` (era `TimberAnalyticsHelper`, es `CompositeAnalyticsHelper`)
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — módulos recableados contra `:shared`
+
+> **Nota:** las clases de `:shared` ya no llevan `@Inject constructor` (`javax.inject` no compila
+> para Native), así que `NetworkModule`, `DatabaseModule` y `RepositoryModule` las construyen con
+> `@Provides` explícitos en vez de `@Binds`. Es temporal: la Fase 4 de [[patterns/kmp-migration]]
+> reemplaza Hilt por Koin.
 
 ## Entries
 

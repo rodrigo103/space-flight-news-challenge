@@ -5,7 +5,13 @@ tags:
 
 # Room + Paging 3 + RemoteMediator
 
-> **Last verified:** 2026-05-19 | **Verified by:** [source] — added offline-aware RemoteMediator error handling
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — migrado a Room KMP en las fases 2+3 de [[patterns/kmp-migration]]
+
+> **Cambios de las fases 2+3:** Room pasó a **Room KMP 2.8.4** y todo esto vive ahora en
+> `:shared/commonMain`. DAOs, entidades y el `RemoteMediator` se movieron **sin cambios de código**,
+> salvo las excepciones de red: `java.net.UnknownHostException`/`ConnectException`/`SocketTimeoutException`
+> pasaron a **`kotlinx.io.IOException`**, que es lo que tira Ktor. El comportamiento offline-first
+> es idéntico. Ver [[architecture/data-layer]].
 
 ## Room setup
 

@@ -188,6 +188,10 @@ Ktor declara un campo cuyo nombre lleva espacios (legal en Kotlin con backticks)
 
 El mensaje de error solo aparece con `--stacktrace`; sin eso, Gradle dice apenas "Error while dexing" y manda a investigar por el lado equivocado (desugaring, JVM target).
 
+#### Resultado ✅ COMPLETADA (2026-08-05)
+
+Ejecutada junto con la Fase 3 en el commit `cb47186`. Detalles en [[architecture/data-layer]].
+
 #### Efecto colateral: Ktor rompe MockWebServer
 
 `ktor-client-okhttp` depende de **OkHttp 5.x**, y la resolución de conflictos de Gradle arrastra ahí a todo el grafo — incluido `mockwebserver` 4.12.0, que llama a `okhttp3.internal.Util`, clase que OkHttp 5 eliminó. Resultado: `NoClassDefFoundError` antes de que corra cualquier assertion. [source]
@@ -209,9 +213,17 @@ HttpClient(engine) {
 }
 ```
 
-### Fase 3 — Persistencia: Room → Room KMP
+### Fase 3 — Persistencia: Room → Room KMP ✅ COMPLETADA (2026-08-05)
 
-Room soporta KMP desde 2.8 [source]. **Los DAOs, entidades y el RemoteMediator sobreviven casi intactos** — el mayor ahorro respecto de migrar a SQLDelight.
+Room soporta KMP desde 2.8 [source]. **Los DAOs, entidades y el RemoteMediator sobreviven casi intactos** — el mayor ahorro respecto de migrar a SQLDelight. Confirmado en la práctica: `ArticleDao`, `ArticleEntity` y `ArticleMappers` se movieron a `commonMain` **sin un solo cambio de código**.
+
+#### Sorpresas que la doc oficial no menciona [source]
+
+| Problema | Solución |
+|---|---|
+| `Dispatchers.IO` es **`internal`** en `commonMain`, pero el ejemplo oficial de Room KMP lo usa ahí | `expect val ioDispatcher` con `Dispatchers.IO` en cada plataforma |
+| `NSFileManager.URLForDirectory` requiere opt-in | `@OptIn(ExperimentalForeignApi::class)` |
+| Sin `withHostTest {}` en el bloque `androidLibrary`, `commonTest` **solo se puede correr en simulador iOS** | Agregar `withHostTest {}` → habilita `testAndroidHostTest` en JVM |
 
 ```toml
 room = "2.8.4"
@@ -245,9 +257,19 @@ Los 6 módulos Hilt ([[tools/hilt-setup]]) pasan a módulos Koin. `MyApplication
 
 `expect/actual` para conectividad (`NWPathMonitor` en iOS), logging y analytics.
 
-### Fase 6 — Tests a `commonTest`
+### Fase 6 — Tests a `commonTest` ✅ COMPLETADA para la capa data (2026-08-05)
 
-MockK no corre en Native y MockWebServer es solo JVM. Se reescriben con **fakes a mano + `MockEngine` de Ktor + Turbine** (que sí es KMP) [source]. Los 14 archivos actuales se migran; los instrumentados de Compose se quedan en `:app`. Ver [[tools/testing-strategy]].
+MockK no corre en Native y MockWebServer es solo JVM. Se reescriben con **fakes a mano + `MockEngine` de Ktor** [source]. Ver [[tools/testing-strategy]].
+
+Hecho junto con las fases 2+3, porque introducir Ktor rompe MockWebServer y dejarlo para después significaba varios commits en rojo:
+
+- `ApiServiceTest`, `ArticlesRepositoryTest`, `ArticleMappersTest` y `GetArticleUseCaseTest` viven en `commonTest`
+- El helper `testApiService()` monta `MockEngine` **con la misma `configureApiClient()` de producción**, así que el mapeo de errores que se testea es el real y no una copia
+- `FakeArticleDao` y `FakeArticlesRepository` reemplazan a MockK
+- **46 tests** (12 en `:app`, 34 en `:shared`), contra 40 antes
+- Los tests de ViewModel se quedan en `:app`: dependen de `SavedStateHandle` y MockK
+
+> **Limitación:** `commonTest` **se ejecuta solo en JVM** vía `testAndroidHostTest`. Compila y linkea para iOS (`linkDebugTestIosSimulatorArm64` pasa), pero correrlo necesita un runtime de simulador instalado. Hasta entonces, `:shared:allTests` falla con *"Xcode does not support simulator tests for ios_simulator_arm64"*. [gap]
 
 ### Fase 7 — `iosApp`
 

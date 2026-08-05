@@ -5,7 +5,12 @@ tags:
 
 # Error Handling
 
-> **Last verified:** 2026-05-18 | **Verified by:** [source] — migrado de `extractBody()` a `CallAdapter.Factory`
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — migrado de `CallAdapter.Factory` a `HttpResponseValidator` de Ktor, y de `Result` a `ApiResult`
+
+> **Cambios de las fases 2+3 de [[patterns/kmp-migration]]:** el `HttpErrorCallAdapterFactory` fue
+> reemplazado por `HttpResponseValidator` de Ktor **con el mismo mapeo de status codes**, y el
+> repositorio devuelve `ApiResult<T>` en vez de `Result<T>` (`Result` no se exporta a Swift).
+> La jerarquía `ApiException` no cambió. Detalle en [[architecture/data-layer]].
 
 ## Capas de error
 

@@ -5,7 +5,7 @@ tags:
 
 # App Structure
 
-> **Last verified:** 2026-08-04 | **Verified by:** [source] — `:domain` (Kotlin/JVM) reemplazado por `:shared` (KMP) en la Fase 1 de [[patterns/kmp-migration]]
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — capa data movida a `:shared` en las fases 2+3 de [[patterns/kmp-migration]]
 
 Estructura del proyecto `SpaceFlightNews`. Proyecto **bimódulo** (`:app` + `:shared`) con Jetpack Compose, organizado en 3 capas (domain, data, ui) + di + analytics.
 
@@ -99,7 +99,7 @@ SpaceFlightNews/
 | Layer | Module | Package | Contents |
 |-------|--------|---------|----------|
 | Domain | `:shared` | `domain/` | Models (`Article`, `ArticleResponse`), repository interface (`ArticlesRepository`), use cases (`GetArticleUseCase`) — KMP `commonMain`, compila para Android e iOS |
-| Data | `:app` | `data/` | Implementations: remote (`ApiService`, `ApiException`, `HttpErrorCallAdapter`), local (`Room` entities, DAOs, `RemoteMediator`), repository impl (`DefaultArticlesRepository`), mappers |
+| Data | `:shared` | `data/` | Implementations: remote (`ApiService` con Ktor, `ApiException`, `ApiResult`, `HttpClientFactory`), local (Room KMP entities, DAOs, `RemoteMediator`), repository impl, mappers. Solo `connectivity/` sigue en `:app` (Fase 5) |
 | UI | `:app` | `ui/` | Theme, navigation, common (`UiState`), components, feature screens, previews |
 | DI | `:app` | `di/` | Hilt modules for each layer |
 | Analytics | `:app` | `analytics/` | Interface + Timber + Firebase + Composite pattern |

@@ -5,7 +5,11 @@ tags:
 
 # Retrofit Setup
 
-> **Last verified:** 2026-08-04 | **Verified by:** [source]
+> ⚠️ **OBSOLETA desde 2026-08-05.** Retrofit fue reemplazado por **Ktor** en las fases 2+3 de
+> [[patterns/kmp-migration]], porque Retrofit no es multiplataforma. Esta página se conserva como
+> registro de la configuración anterior. Para la capa HTTP actual ver [[architecture/data-layer]].
+
+> **Last verified:** 2026-08-04 | **Verified by:** [source] — configuración histórica, ya no en uso
 
 ## Config
 

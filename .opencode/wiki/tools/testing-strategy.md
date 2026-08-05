@@ -5,18 +5,52 @@ tags:
 
 # Testing Strategy
 
-> **Last verified:** 2026-05-19 | **Verified by:** [analysis]
+> **Last verified:** 2026-08-05 | **Verified by:** [source] — tests de data migrados a `commonTest` (fases 2+3 de [[patterns/kmp-migration]])
 
 ## Stack de testing
 
-| Herramienta | Uso |
-|---|---|
-| JUnit 5 | Test runner |
-| MockK | Mocking de Kotlin (coroutines, suspend) |
-| kotlinx.coroutines.test | Coroutine testing (`runTest`, `StandardTestDispatcher`) |
-| Turbine | Flow testing (secuencia de emisiones) |
-| MockWebServer | HTTP mocking (servidor local) |
-| Compose UI Test | Testing de UI Compose |
+El stack está **partido en dos** desde la migración a KMP: lo que corre en las dos plataformas y lo que es solo Android. [source]
+
+| Herramienta | Dónde | Uso |
+|---|---|---|
+| `kotlin.test` | `:shared/commonTest` | Asserts multiplataforma |
+| **Ktor MockEngine** | `:shared/commonTest` | HTTP mocking — reemplaza a MockWebServer |
+| **Fakes a mano** | `:shared/commonTest` | Dobles de prueba — reemplazan a MockK |
+| kotlinx.coroutines.test | ambos | `runTest`, `StandardTestDispatcher` |
+| Turbine | ambos | Flow testing |
+| JUnit 4 + MockK | `:app/test` | Tests de ViewModel (`SavedStateHandle`) |
+| Compose UI Test | `:app/androidTest` | Instrumentados |
+
+### Por qué cambió
+
+- **MockK no corre en Kotlin/Native.** Todo doble de prueba en `commonTest` se escribe a mano.
+- **MockWebServer es JVM-only**, y además `ktor-client-okhttp` arrastra OkHttp 5.x, que rompe `mockwebserver` 4.12 (usa la ya inexistente `okhttp3.internal.Util`).
+
+### El helper compartido
+
+`testApiService()` monta `MockEngine` con la **misma `configureApiClient()` que usa producción**, así que el mapeo de status codes a `ApiException` que se testea es literalmente el que corre en la app, no una réplica que puede divergir. [analysis]
+
+```kotlin
+fun testApiService(status: HttpStatusCode, body: String, recorded: RecordedRequests?): ApiService {
+    val engine = MockEngine { request ->
+        recorded?.urls?.add(request.url.toString())
+        respond(ByteReadChannel(body), status, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    return ApiService(HttpClient(engine) { configureApiClient() })
+}
+```
+
+### Cómo correrlos
+
+```bash
+./gradlew :shared:testAndroidHostTest   # commonTest en JVM — 34 tests
+./gradlew :app:test                     # ViewModels — 12 tests
+./gradlew :shared:allTests              # ⚠️ requiere runtime de simulador iOS
+```
+
+`allTests` intenta ejecutar en simulador y falla con *"Xcode does not support simulator tests for ios_simulator_arm64"* si no hay runtime instalado (`xcodebuild -downloadPlatform iOS`). Los tests **compilan y linkean** para iOS igual. [gap]
+
+`withHostTest {}` en el bloque `androidLibrary` es lo que habilita correr `commonTest` en JVM; sin eso, la única forma es el simulador.
 
 ## Tipos de tests
 

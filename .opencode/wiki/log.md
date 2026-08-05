@@ -1,5 +1,18 @@
 # Changelog del Wiki
 
+## 2026-08-05
+
+- **Fases 2+3 de [[patterns/kmp-migration]] completadas** (commit `cb47186`) — capa data entera a `:shared/commonMain`, build de vuelta en verde
+  - **Retrofit → Ktor**: `ApiService` pasa de interfaz anotada a clase con `HttpClient`; `HttpErrorCallAdapterFactory` → `HttpResponseValidator` con el mismo mapeo de status codes; engine `expect/actual` (OkHttp/Darwin)
+  - **`ApiResult` reemplaza a `kotlin.Result`** en la API pública de `:shared`
+  - **Room → Room KMP 2.8.4**: `@ConstructedBy` + `expect object AppDatabaseConstructor`, `BundledSQLiteDriver`, builders por plataforma, KSP por target. **DAOs, entidades y mappers se movieron sin un solo cambio de código**
+  - **Tests**: 4 clases a `commonTest` con `MockEngine` + fakes a mano. 46 tests (12 en `:app`, 34 en `:shared`), contra 40 antes
+  - `:shared` expone factories de sus propios tipos, así que **Ktor y Room no aparecen en ninguna firma de `:app`**
+  - Tres sorpresas que la doc oficial no menciona, documentadas en la página: `Dispatchers.IO` es `internal` en `commonMain` (pese a que el ejemplo oficial de Room lo usa ahí), `NSFileManager` requiere `@OptIn(ExperimentalForeignApi)`, y sin `withHostTest {}` los `commonTest` solo corren en simulador iOS
+  - Limitación registrada: `commonTest` se ejecuta solo en JVM; compila y linkea para iOS pero falta el runtime de simulador
+  - Actualizadas [[architecture/data-layer]] (reescrita), [[architecture/app-structure]], [[tools/testing-strategy]] (reescrita), [[tools/hilt-setup]], [[patterns/error-handling]], [[patterns/room-paging]], [[index]]
+  - [[tools/retrofit-setup]] marcada como **obsoleta**, conservada como registro histórico
+
 ## 2026-08-04 (4)
 
 - Documentados dos gotchas de versiones en [[patterns/kmp-migration]], encontrados al arrancar las fases 2+3

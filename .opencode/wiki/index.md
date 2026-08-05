@@ -33,7 +33,7 @@ Base de conocimiento persistente del proyecto, mantenida por opencode.
 
 ## Tools
 
-- [[tools/retrofit-setup]] — Retrofit + OkHttp + kotlinx.serialization
+- [[tools/retrofit-setup]] — ⚠️ obsoleta: Retrofit fue reemplazado por Ktor
 - [[tools/detekt-setup]] — Detekt lint + Compose rules
 - [[tools/hilt-setup]] — Hilt DI + módulos
 - [[tools/key-dependencies]] — Resumen de dependencias clave + decisiones técnicas
