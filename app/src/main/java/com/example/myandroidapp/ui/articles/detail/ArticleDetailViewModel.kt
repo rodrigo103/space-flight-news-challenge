@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myandroidapp.analytics.AnalyticsHelper
+import com.example.myandroidapp.data.remote.fold
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.domain.usecase.GetArticleUseCase
 import com.example.myandroidapp.ui.common.UiState
@@ -41,15 +42,16 @@ class ArticleDetailViewModel @Inject constructor(
     fun loadArticle() {
         viewModelScope.launch {
             _uiState.update { UiState.Loading }
-            getArticle(articleId)
-                .onSuccess { article ->
+            getArticle(articleId).fold(
+                onSuccess = { article ->
                     analytics.logEvent("article_loaded", mapOf("id" to article.id.toString()))
                     _uiState.value = UiState.Success(ArticleDetailState(article = article))
-                }
-                .onFailure { e ->
+                },
+                onFailure = { e ->
                     analytics.logError(e, "loadArticle_$articleId")
                     _uiState.value = UiState.Error(e.message ?: "Unknown error")
-                }
+                },
+            )
         }
     }
 

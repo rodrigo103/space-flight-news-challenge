@@ -1,0 +1,54 @@
+package com.example.myandroidapp.data.local
+
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.LoadType
+import androidx.paging.PagingState
+import androidx.paging.RemoteMediator
+import com.example.myandroidapp.data.mappers.toEntity
+import com.example.myandroidapp.data.remote.ApiService
+import kotlinx.coroutines.CancellationException
+import kotlinx.io.IOException
+
+@OptIn(ExperimentalPagingApi::class)
+class ArticleRemoteMediator(
+    private val apiService: ApiService,
+    private val articleDao: ArticleDao,
+    private val searchQuery: String? = null,
+) : RemoteMediator<Int, ArticleEntity>() {
+
+    override suspend fun load(
+        loadType: LoadType,
+        state: PagingState<Int, ArticleEntity>,
+    ): MediatorResult {
+        val offset = when (loadType) {
+            LoadType.REFRESH -> 0
+            LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
+            LoadType.APPEND -> {
+                val lastItem = state.lastItemOrNull()
+                if (lastItem == null) 0
+                else state.pages.sumOf { it.data.size }
+            }
+        }
+
+        return try {
+            val response = apiService.getArticles(limit = PAGE_SIZE, offset = offset, search = searchQuery)
+            val articles = response.results
+            articleDao.insertAll(articles.map { it.toEntity() })
+            MediatorResult.Success(endOfPaginationReached = articles.size < PAGE_SIZE)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: IOException) {
+            // Fallo de red (host inalcanzable, timeout, sin conexión): no interrumpe Paging,
+            // mantiene visibles los datos cacheados y deja que reintente.
+            // Los errores HTTP llegan como ApiException, que no es IOException, así que
+            // sí se propagan como Error — igual que antes con Retrofit.
+            MediatorResult.Success(endOfPaginationReached = false)
+        } catch (e: Exception) {
+            MediatorResult.Error(e)
+        }
+    }
+
+    private companion object {
+        const val PAGE_SIZE = 20
+    }
+}

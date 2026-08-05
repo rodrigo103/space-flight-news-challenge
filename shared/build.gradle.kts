@@ -18,6 +18,10 @@ kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_17
         }
+
+        // Habilita correr commonTest en la JVM. Sin esto, los tests solo se pueden ejecutar en
+        // simulador iOS, que requiere un runtime instalado.
+        withHostTest {}
     }
 
     listOf(
@@ -49,6 +53,7 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.timber)
         }
 
         iosMain.dependencies {

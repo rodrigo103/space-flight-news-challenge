@@ -1,9 +1,9 @@
 package com.example.myandroidapp.di
 
 import android.content.Context
-import androidx.room.Room
 import com.example.myandroidapp.data.local.AppDatabase
 import com.example.myandroidapp.data.local.ArticleDao
+import com.example.myandroidapp.data.local.createDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,16 +17,9 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "spaceflightnews.db",
-        ).build()
-    }
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
+        createDatabase(context)
 
     @Provides
-    fun provideArticleDao(database: AppDatabase): ArticleDao {
-        return database.articleDao()
-    }
+    fun provideArticleDao(database: AppDatabase): ArticleDao = database.articleDao()
 }

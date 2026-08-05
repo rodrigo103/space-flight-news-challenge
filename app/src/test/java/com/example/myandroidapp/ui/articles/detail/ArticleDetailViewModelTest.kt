@@ -1,7 +1,8 @@
 package com.example.myandroidapp.ui.articles.detail
 
 import androidx.lifecycle.SavedStateHandle
-import com.example.myandroidapp.TestArticleData
+import com.example.myandroidapp.data.remote.ApiResult
+import com.example.myandroidapp.test.TestArticleData
 import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.domain.usecase.GetArticleUseCase
 import com.example.myandroidapp.test.MainDispatcherRule
@@ -39,7 +40,7 @@ class ArticleDetailViewModelTest {
     @Test
     fun `null error message falls back to Unknown error`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.failure(Exception())
+        coEvery { getArticle(1) } returns ApiResult.Failure(Exception())
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,
@@ -57,7 +58,7 @@ class ArticleDetailViewModelTest {
     fun `logs event on success`() = runTest {
         val analytics = mockk<AnalyticsHelper>(relaxed = true)
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
+        coEvery { getArticle(1) } returns ApiResult.Success(TestArticleData.articleDetail)
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,
@@ -72,7 +73,7 @@ class ArticleDetailViewModelTest {
     @Test
     fun `loadArticle on success populates detail on success`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
+        coEvery { getArticle(1) } returns ApiResult.Success(TestArticleData.articleDetail)
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,
@@ -90,7 +91,7 @@ class ArticleDetailViewModelTest {
     @Test
     fun `loadArticle on failure sets error`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.failure(Exception("Not found"))
+        coEvery { getArticle(1) } returns ApiResult.Failure(Exception("Not found"))
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,

@@ -3,6 +3,7 @@ package com.example.myandroidapp.ui.articles.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myandroidapp.analytics.AnalyticsHelper
+import com.example.myandroidapp.data.remote.fold
 import com.example.myandroidapp.domain.usecase.GetArticleUseCase
 import com.example.myandroidapp.ui.common.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,15 +26,16 @@ class ArticleDetailPaneViewModel @Inject constructor(
         analytics.logScreenView("ArticleDetail_$articleId")
         viewModelScope.launch {
             _uiState.value = UiState.Loading
-            getArticle(articleId)
-                .onSuccess { article ->
+            getArticle(articleId).fold(
+                onSuccess = { article ->
                     analytics.logEvent("article_loaded", mapOf("id" to article.id.toString()))
                     _uiState.value = UiState.Success(ArticleDetailState(article = article))
-                }
-                .onFailure { e ->
+                },
+                onFailure = { e ->
                     analytics.logError(e, "loadArticle_$articleId")
                     _uiState.value = UiState.Error(e.message ?: "Unknown error")
-                }
+                },
+            )
         }
     }
 }
