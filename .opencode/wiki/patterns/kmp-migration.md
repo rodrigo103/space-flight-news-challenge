@@ -115,9 +115,31 @@ Era el paso de mayor riesgo porque SKIE es un plugin del compilador de Kotlin/Na
 |---|---|
 | **SKIE 0.10.14** (release 2026-07-27) | Soporta Kotlin **2.0.0 → 2.4.10**. El proyecto está en 2.3.20 → **compatible** |
 | Room KMP | 2.8.4 + `sqlite-bundled` 2.6.2 (versiones de la doc oficial de Room KMP) |
-| Ktor, Koin, KSP | A fijar al implementar; sin incompatibilidad conocida |
+| **Ktor 3.5.2** | **Mínimo utilizable acá.** Ver el gotcha de dexing más abajo — 3.2.0 no compila con `minSdk 24` |
+| Koin | 4.1.0 (Fase 4) |
 
-> **Cuidado con las fuentes:** el índice de documentación de ctx7 devolvía "compatible hasta Kotlin 2.3.10", lo que habría bloqueado el plan. La página en vivo dice 2.4.10. Verificar versiones contra la fuente en vivo, no contra índices cacheados. [analysis]
+### Gotchas de versiones — leer antes de fijar cualquier dependencia
+
+Los dos incidentes de esta migración tuvieron la misma causa raíz: **los índices de búsqueda de paquetes devuelven datos desactualizados**. Ambos costaron tiempo real y uno casi hace abortar el plan entero. [source]
+
+| Incidente | Qué decía el índice | Qué decía la fuente real | Consecuencia si se hubiera creído |
+|---|---|---|---|
+| SKIE ↔ Kotlin | ctx7: "compatible hasta Kotlin 2.3.10" | `skie.touchlab.co/intro` en vivo: "hasta **2.4.10**" | Abortar el plan o bajar Kotlin sin necesidad |
+| Ktor última versión | `search.maven.org/solrsearch`: `latestVersion` = **3.2.0** | `maven-metadata.xml`: `<release>` = **3.5.2** | Quedarse en una versión que no dexea (ver abajo) |
+
+**Regla:** para versiones, ir siempre a la fuente autoritativa, no al índice.
+
+```bash
+# Maven Central / Google Maven — el metadata no miente
+curl -s https://repo1.maven.org/maven2/io/ktor/ktor-client-core/maven-metadata.xml | grep -E "<release>|<latest>"
+
+# ¿Publica variantes iOS? El Gradle module metadata lo dice
+curl -s https://dl.google.com/dl/android/maven2/androidx/room/room-runtime/2.8.4/room-runtime-2.8.4.module | grep -o "iosArm64"
+```
+
+Ese último chequeo se usó para validar `paging-common`, `room-runtime` y `room-paging` antes de escribir código — sin él, la Fase 1 y la 3 habrían fallado recién al linkear.
+
+> **Nota:** `search.maven.org/solrsearch` además ordena las versiones como *strings*, así que `0.10.4` le aparece por encima de `0.10.12`. No sirve ni para listar.
 
 Falta: rama `feat/kmp-migration` y descarga del runtime de simulador (`xcodebuild -downloadPlatform iOS`).
 
@@ -152,6 +174,31 @@ El tipo de retorno se borró a **`id`** (objeto ObjC sin tipo → `Any?` en Swif
 ### Fase 2 — Red: Retrofit → Ktor
 
 Cliente en `commonMain`; engine OkHttp en `androidMain`, **Darwin** en `iosMain` [source]. `HttpResponseValidator` reemplaza al `CallAdapter` con el mismo mapeo de status codes. Introducir `ApiResult`.
+
+#### ⚠️ Ktor < 3.5.2 no dexea con `minSdk 24`
+
+Con Ktor **3.2.0** el build de Android falla en `mergeExtDexDebug` [source]:
+
+```
+D8: Space characters in SimpleName 'use streaming syntax' are not allowed prior to
+    DEX version 040 (field name `use streaming syntax` on class io.ktor.client.plugins.Messages)
+```
+
+Ktor declara un campo cuyo nombre lleva espacios (legal en Kotlin con backticks), y los identificadores con espacios requieren **DEX 040, o sea `minSdk` 30+**. Con `minSdk 24` no hay configuración de Gradle que lo arregle: o se sube el `minSdk` —inaceptable— o se cambia de versión de Ktor. **3.5.2 no tiene el problema.**
+
+El mensaje de error solo aparece con `--stacktrace`; sin eso, Gradle dice apenas "Error while dexing" y manda a investigar por el lado equivocado (desugaring, JVM target).
+
+#### Efecto colateral: Ktor rompe MockWebServer
+
+`ktor-client-okhttp` depende de **OkHttp 5.x**, y la resolución de conflictos de Gradle arrastra ahí a todo el grafo — incluido `mockwebserver` 4.12.0, que llama a `okhttp3.internal.Util`, clase que OkHttp 5 eliminó. Resultado: `NoClassDefFoundError` antes de que corra cualquier assertion. [source]
+
+```
+com.squareup.okhttp3:okhttp:5.3.2
+  Selection reasons: By conflict resolution: between versions 5.3.2, 4.12.0 and 3.14.9
+  \--- io.ktor:ktor-client-okhttp-jvm \--- project :shared
+```
+
+No se repara en el lugar: esos tests son justamente los que esta fase reemplaza por `MockEngine`. Pero implica que **introducir Ktor y reescribir los tests de red tienen que ir en la misma tanda**, o el repo queda en rojo en el medio.
 
 ```kotlin
 HttpClient(engine) {

@@ -1,5 +1,13 @@
 # Changelog del Wiki
 
+## 2026-08-04 (4)
+
+- Documentados dos gotchas de versiones en [[patterns/kmp-migration]], encontrados al arrancar las fases 2+3
+  - **Nueva sección "Gotchas de versiones"** — tabla de los dos incidentes con la misma causa raíz: los índices de búsqueda de paquetes devuelven datos desactualizados. ctx7 decía que SKIE no soportaba Kotlin 2.3.20 (casi aborta el plan); `search.maven.org/solrsearch` daba Ktor 3.2.0 como última cuando `maven-metadata.xml` dice 3.5.2. Incluye los comandos `curl` para consultar la fuente autoritativa
+  - **Ktor < 3.5.2 no dexea con `minSdk 24`** — el campo `use streaming syntax` de `io.ktor.client.plugins.Messages` tiene espacios y eso exige DEX 040 (`minSdk` 30+). No se arregla por configuración; hay que cambiar de versión. El error real solo se ve con `--stacktrace`
+  - **Ktor rompe MockWebServer** — `ktor-client-okhttp` arrastra OkHttp 5.x y la resolución de conflictos empuja a `mockwebserver` 4.12.0, que usa la ya inexistente `okhttp3.internal.Util`. Consecuencia de proceso: introducir Ktor y reescribir los tests de red deben ir en la misma tanda
+  - Tabla de la matriz de versiones actualizada con Ktor 3.5.2 y Koin 4.1.0
+
 ## 2026-08-04 (3)
 
 - **Fase 1 de [[patterns/kmp-migration]] completada** — `:domain` (Kotlin/JVM) reemplazado por `:shared` (KMP)
