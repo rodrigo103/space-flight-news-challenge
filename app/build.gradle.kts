@@ -1,5 +1,5 @@
 plugins {
-    id("jacoco")
+    alias(libs.plugins.kover)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
@@ -24,9 +24,6 @@ android {
     }
 
     buildTypes {
-        debug {
-            enableUnitTestCoverage = true
-        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -72,41 +69,53 @@ sonarqube {
         property("sonar.host.url", "https://sonarcloud.io")
         property(
             "sonar.coverage.jacoco.xmlReportPaths",
-            "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+            "${project.layout.buildDirectory.get()}/reports/kover/report.xml"
         )
     }
 }
 
-tasks.register<JacocoReport>("jacocoTestReport") {
-    dependsOn("testDebugUnitTest")
-
+kover {
     reports {
-        xml.required = true
-        html.required = true
-    }
-
-    val debugClassesDir =
-        "${project.layout.buildDirectory.get()}/intermediates/classes/debug/transformDebugClassesWithAsm/dirs"
-    val mainSrc = "${project.projectDir}/src/main/java"
-
-    sourceDirectories.setFrom(files(mainSrc))
-    classDirectories.setFrom(
-        fileTree(debugClassesDir) {
-            exclude(
-                "**/R.class",
-                "**/R$*.class",
-                "**/BuildConfig.*",
-                "**/*Test*.*",
-                "**/*Preview*.*",
-                "android/**",
-            )
+        filters {
+            excludes {
+                classes(
+                    "*.R",
+                    "*.R\$*",
+                    "*.BuildConfig",
+                    "*_Impl*",
+                    "*Preview*",
+                    "ComposableSingletons*",
+                )
+                packages("com.example.myandroidapp.di")
+            }
         }
-    )
-    executionData.setFrom(files("${project.layout.buildDirectory.get()}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"))
+        total {
+            // El reporte "total" (el que consume Sonar y el que gatea el CI) mide la capa
+            // lógica: data + domain (en `:shared`) + ViewModels (en `:app`). La UI Compose se
+            // valida con los tests instrumentados y se inspecciona en `koverHtmlReportDebug`.
+            filtersAppend {
+                includes {
+                    packages(
+                        "com.example.myandroidapp.data",
+                        "com.example.myandroidapp.domain",
+                    )
+                    classes("*ViewModel*")
+                }
+            }
+            verify {
+                // Piso "ratchet": fijado apenas debajo del valor actual (2026-10-17, ~57%).
+                // Subir a medida que la suite crece — nunca bajarlo.
+                rule("Logica (data + domain + VMs)") {
+                    minBound(55)
+                }
+            }
+        }
+    }
 }
 
 dependencies {
     implementation(project(":shared"))
+    kover(project(":shared"))
     implementation(libs.firebase.analytics)
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)

@@ -33,6 +33,6 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Run tests, coverage report and SonarCloud analysis
-        run: ./gradlew :app:jacocoTestReport sonar
+        run: ./gradlew :app:koverXmlReport sonar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
