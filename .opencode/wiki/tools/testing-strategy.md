@@ -5,7 +5,7 @@ tags:
 
 # Testing Strategy
 
-> **Last verified:** 2026-08-05 | **Verified by:** [source] — tests de data migrados a `commonTest` (fases 2+3 de [[patterns/kmp-migration]])
+> **Last verified:** 2026-10-17 | **Verified by:** [source] — cobertura migrada a Kover 0.9.11 (ratchet 65) y suite actualizada a 42 tests en `:shared` + 17 en `:app`
 
 ## Stack de testing
 
@@ -17,21 +17,27 @@ El stack está **partido en dos** desde la migración a KMP: lo que corre en las
 | **Ktor MockEngine** | `:shared/commonTest` | HTTP mocking — reemplaza a MockWebServer |
 | **Fakes a mano** | `:shared/commonTest` | Dobles de prueba — reemplazan a MockK |
 | kotlinx.coroutines.test | ambos | `runTest`, `StandardTestDispatcher` |
-| Turbine | ambos | Flow testing |
-| JUnit 4 + MockK | `:app/test` | Tests de ViewModel (`SavedStateHandle`) |
-| Compose UI Test | `:app/androidTest` | Instrumentados |
+| Turbine | ambos (declarado) | Flow testing — hoy sin usos, ver nota |
+| JUnit 4 + MockK | `:app/src/test` | Tests de ViewModel (`SavedStateHandle`) |
+| Compose UI Test | `:app/src/androidTest` | Instrumentados |
 
 ### Por qué cambió
 
 - **MockK no corre en Kotlin/Native.** Todo doble de prueba en `commonTest` se escribe a mano.
 - **MockWebServer es JVM-only**, y además `ktor-client-okhttp` arrastra OkHttp 5.x, que rompe `mockwebserver` 4.12 (usa la ya inexistente `okhttp3.internal.Util`).
 
+`mockwebserver` quedó declarado en `app/build.gradle.kts` pero sin usos: los tests de HTTP viven en `:shared`, sobre MockEngine. [source]
+
 ### El helper compartido
 
 `testApiService()` monta `MockEngine` con la **misma `configureApiClient()` que usa producción**, así que el mapeo de status codes a `ApiException` que se testea es literalmente el que corre en la app, no una réplica que puede divergir. [analysis]
 
 ```kotlin
-fun testApiService(status: HttpStatusCode, body: String, recorded: RecordedRequests?): ApiService {
+fun testApiService(
+    status: HttpStatusCode = HttpStatusCode.OK,
+    body: String = "{}",
+    recorded: RecordedRequests? = null,
+): ApiService {
     val engine = MockEngine { request ->
         recorded?.urls?.add(request.url.toString())
         respond(ByteReadChannel(body), status, headersOf(HttpHeaders.ContentType, "application/json"))
@@ -40,11 +46,14 @@ fun testApiService(status: HttpStatusCode, body: String, recorded: RecordedReque
 }
 ```
 
+`RecordedRequests` registra las URLs que pasaron por el engine, para poder assertear query params (`limit`, `offset`, `search`). [source]
+
 ### Cómo correrlos
 
 ```bash
-./gradlew :shared:testAndroidHostTest   # commonTest en JVM — 34 tests
-./gradlew :app:test                     # ViewModels — 12 tests
+./gradlew :shared:testAndroidHostTest   # commonTest en JVM — 42 tests
+./gradlew :app:testDebugUnitTest        # ViewModels de :app — 17 tests
+./gradlew test                          # unit tests de :app (debug + release); NO corre :shared
 ./gradlew :shared:allTests              # ⚠️ requiere runtime de simulador iOS
 ```
 
@@ -60,32 +69,39 @@ Prueban el comportamiento del ViewModel con un mock del Repository usando MockK:
 
 ```kotlin
 class ArticlesListViewModelTest {
-    @MockK lateinit var repository: ArticlesRepository
+    @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `when load articles succeeds then state is Success`() = runTest {
-        coEvery { repository.getArticles(any(), any()) } returns Result.success(testArticles)
+    fun `onSearchTextChange updates search query`() = runTest {
+        val repository = mockk<ArticlesRepository>()
+        every { repository.getArticlesPaged(any()) } returns flowOf(PagingData.empty())
+        val analytics = mockk<AnalyticsHelper>(relaxed = true)
 
-        val vm = ArticlesListViewModel(repository)
-        // assert state transitions
+        val viewModel = ArticlesListViewModel(repository, analytics)
+        viewModel.onSearchTextChange("nasa")
+
+        assertEquals("nasa", viewModel.searchQuery.value)
     }
 }
 ```
 
 ### Integration tests (HTTP + Repository)
 
-Usan MockWebServer para simular la API real. Verifican que Retrofit parsea bien el JSON y que el Repository maneja códigos HTTP:
+Ya no usan MockWebServer: el doble es MockEngine con la config de producción, y del lado datos un fake a mano del DAO. Verifican paginación, errores HTTP y fallback offline:
 
 ```kotlin
-class ApiServiceTest {
-    @get:Rule val mockWebServer = MockWebServerRule()
-
+class ArticleRemoteMediatorTest {
     @Test
-    fun `getArticles returns parsed articles`() = runTest {
-        mockWebServer.enqueue(MockResponse().setBody(testJson).setResponseCode(200))
-        val api = createApiService(mockWebServer.url("/"))
-        val response = api.getArticles(20, 0)
-        assertEquals(20, response.results.size)
+    fun `refresh on a full page inserts items and keeps pagination open`() = runTest {
+        val recorded = RecordedRequests()
+        val dao = FakeArticleDao()
+        val api = testApiService(body = articlesJson(pageSize), recorded = recorded)
+
+        val result = ArticleRemoteMediator(api, dao).load(LoadType.REFRESH, emptyState())
+
+        assertTrue(result is Success)
+        assertEquals(pageSize, dao.inserted.size)
+        assertContains(recorded.urls.first(), "offset=0")
     }
 }
 ```
@@ -103,18 +119,24 @@ viewModel.description.test {
 }
 ```
 
+Turbine está declarado en ambos módulos, pero hoy ningún test lo usa: los tests del pane VM avanzan el dispatcher con `mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()` y leen `uiState.value`. [source]
+
 ## Patrones avanzados
 
-### MainCoroutineTestRule
+Patrones de referencia. Vigentes en `main`: `MainDispatcherRule` y los fakes. Paparazzi y las custom semantics **no** están integrados (no hay dependencia ni usos). [source]
+
+### MainDispatcherRule
+
+El rule real del proyecto (ya no se llama `MainCoroutineTestRule`):
 
 ```kotlin
-class MainCoroutineTestRule(
-    val testDispatcher: TestDispatcher = StandardTestDispatcher()
-) : TestWatcher() {
-    override fun starting(description: Description) {
+class MainDispatcherRule : TestWatcher() {
+    val testDispatcher = StandardTestDispatcher()
+
+    override fun starting(description: Description?) {
         Dispatchers.setMain(testDispatcher)
     }
-    override fun finished(description: Description) {
+    override fun finished(description: Description?) {
         Dispatchers.resetMain()
     }
 }
@@ -150,19 +172,11 @@ composeTestRule.onNode(SemanticsMatcher("is loading") {
 | Legibilidad | El fake documenta el comportamiento | Arrange es verboso |
 | Costo inicial | Alto | Bajo |
 
-Para proyectos que crecen, los **fakes** son superiores. Se inyectan via Hilt `@TestInstallIn`:
-
-```kotlin
-@TestInstallIn(components = [SingletonComponent::class], replaces = [DataModule::class])
-@Module
-abstract class TestDataModule {
-    @Binds abstract fun bindRepository(fake: FakeRepository): ArticlesRepository
-}
-```
+Para proyectos que crecen, los **fakes** son superiores. Ejemplo real: `FakeArticleDao` implementa `ArticleDao` con un `MutableMap` y expone `inserted` para assertear. [source]
 
 ### Paparazzi Screenshot Testing
 
-Para detectar regresiones visuales. Captura screenshots en múltiples dispositivos y modos:
+Para detectar regresiones visuales. Captura screenshots en múltiples dispositivos y modos. **No integrado en `main`** — se documenta como camino a futuro:
 
 ```kotlin
 @Test fun `article list screenshot`() {
@@ -175,21 +189,52 @@ Para detectar regresiones visuales. Captura screenshots en múltiples dispositiv
 }
 ```
 
+## Cobertura (Kover)
+
+La cobertura la mide **Kover 0.9.11** (`org.jetbrains.kotlinx.kover`), aplicado en `:app` y `:shared`. Reemplazó a JaCoCo: se eliminaron el plugin `jacoco`, el flag `enableUnitTestCoverage` y el task manual `jacocoTestReport`. [source]
+
+El **reporte "total"** — el que consume SonarCloud y el que gatea el CI — está scopeado a la **capa lógica**: packages `com.example.myandroidapp.data` + `com.example.myandroidapp.domain` y clases `*ViewModel*`. Excluye el código generado (`*.R`, `*.BuildConfig`, `*_Impl*`, `*Preview*`, `ComposableSingletons*`), y el package `di`. La UI Compose no entra en el gate: se valida con tests instrumentados y se inspecciona a mano en `koverHtmlReportDebug`. [source]
+
+El umbral es un **ratchet**: `verify { rule("Logica (data + domain + VMs)") { minBound(65) } }` en `app/build.gradle.kts`. La cobertura lógica actual ronda el 70%; el piso se sube, nunca se baja. El job `unit-tests` del CI corre `./gradlew test :app:koverVerify` y rompe el build si cae por debajo. [source]
+
+| Comando | Qué genera |
+|---|---|
+| `./gradlew :app:koverVerify` | Aplica el umbral (65) — falla el build si la cobertura lógica no llega |
+| `./gradlew :app:koverXmlReport` | XML JaCoCo-compatible (`app/build/reports/kover/report.xml`) para SonarCloud |
+| `./gradlew :app:koverHtmlReport` | HTML del reporte "total" (solo lógica) |
+| `./gradlew :app:koverHtmlReportDebug` | HTML de `:app` completa, incluye UI Compose |
+
+`kover(project(":shared"))` en las dependencias de `:app` es lo que agrega la cobertura de `:shared` (data + domain) al reporte de `:app`. [source]
+
+### Gotcha: token de SonarCloud
+
+El `SONAR_TOKEN` puede estar vencido (~90 días de vida). Síntoma: el job de `sonar.yml` falla con 403 *"scanner bootstrapping failed"*. Se arregla regenerando el secret en GitHub. [analysis]
+
+### Nota: línea `android-native`
+
+En la línea hermana `android-native` (Android nativo puro, mismo repo) también hay Kover, pero con ratchet **60**, y además Robolectric 4.17 (`sdk=34` en `robolectric.properties` — SDK 36 pide Java 21), tests de DAO con Room in-memory real y MockWebServer. No aplica a `main`. [source]
+
 ## Archivos de testing en el proyecto
 
-| Archivo | Tipo | Prueba |
-|---|---|---|
-| `TestArticleData.kt` | Fixture | Constantes de prueba compartidas |
-| `TestJson.kt` | Fixture | JSON para MockWebServer |
-| `MainDispatcherRule.kt` | Rule | Test CoroutineDispatcher |
-| `MockWebServerRule.kt` | Rule | Servidor HTTP local |
-| `ApiServiceTest.kt` | Integration | Parser y HTTP |
-| `ArticlesRepositoryTest.kt` | Integration | Pipeline completo |
-| `ArticlesListViewModelTest.kt` | Unit | ViewModel states |
-| `ArticleDetailViewModelTest.kt` | Unit | Detail states |
+| Archivo | Módulo | Tipo | Prueba |
+|---|---|---|---|
+| `test/Fakes.kt` | `:shared` | Fixture | `FakeArticleDao`, `FakeArticlesRepository`, `RecordedRequests`, `testApiService` |
+| `test/TestArticleData.kt` | ambos | Fixture | Constantes de prueba compartidas |
+| `test/TestJson.kt` | `:shared` | Fixture | JSON para MockEngine |
+| `data/remote/ApiServiceTest.kt` | `:shared` | Integration | Parser y mapeo de status codes (11) |
+| `data/ArticlesRepositoryTest.kt` | `:shared` | Integration | Pipeline completo (13) |
+| `data/local/ArticleRemoteMediatorTest.kt` | `:shared` | Integration | Mediator: refresh/append/prepend, search, errores (8) |
+| `data/mappers/ArticleMappersTest.kt` | `:shared` | Unit | Mappers Entity ↔ Domain (4) |
+| `domain/usecase/GetArticleUseCaseTest.kt` | `:shared` | Unit | Timeout + fallback de cache (6) |
+| `test/MainDispatcherRule.kt` | `:app` | Rule | Test CoroutineDispatcher |
+| `ui/articles/list/ArticlesListViewModelTest.kt` | `:app` | Unit | ViewModel states (6) |
+| `ui/articles/detail/ArticleDetailViewModelTest.kt` | `:app` | Unit | Detail states (6) |
+| `ui/articles/detail/ArticleDetailPaneViewModelTest.kt` | `:app` | Unit | Pane states + analytics (5) |
+
+Totales al 2026-10-17: **42** tests en `:shared` (`testAndroidHostTest`) y **17** en `:app` (`testDebugUnitTest`). [source]
 
 ## Ver también
 
 - [[processes/build-and-test]] — Cómo compilar y testear
 - [[patterns/error-handling]] — Error handling + testing
-- [[tools/retrofit-setup]] — Retrofit + CallAdapter + testing
+- [[patterns/kmp-migration]] — Por qué `:shared` es KMP y cómo se testea

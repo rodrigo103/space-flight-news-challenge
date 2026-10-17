@@ -1,5 +1,17 @@
 # Changelog del Wiki
 
+## 2026-10-17
+
+- **Testing / coverage: JaCoCo → Kover 0.9.11** (commits `f7729c2`, `34ededf`) — actualizadas [[tools/testing-strategy]] y [[processes/build-and-test]]
+  - Kover 0.9.11 (`org.jetbrains.kotlinx.kover`) aplicado en `:app` y `:shared`; eliminados el plugin `jacoco`, el flag `enableUnitTestCoverage` y el task manual `jacocoTestReport`
+  - **Reporte "total" scopeado a la capa lógica**: packages `data` + `domain` + clases `*ViewModel*`; excluye generado (`*.R`, `*.BuildConfig`, `*_Impl*`, `*Preview*`, `ComposableSingletons*`, `di`). La UI Compose queda fuera del gate: se valida con instrumentados y se inspecciona en `koverHtmlReportDebug`
+  - **Umbral ratchet** `minBound(65)` (cobertura lógica actual ≈70%) y `./gradlew test :app:koverVerify` en el job `unit-tests` del CI. Subir, nunca bajar
+  - Sonar: `./gradlew :app:koverXmlReport sonar`, con `sonar.coverage.jacoco.xmlReportPaths` → `app/build/reports/kover/report.xml` (XML JaCoCo-compatible). Gotcha registrado: el `SONAR_TOKEN` vence (~90 días) y el job falla con 403 *"scanner bootstrapping failed"*
+  - **Tests nuevos**: `ArticleRemoteMediatorTest` (8 tests; `FakeArticleDao` + Ktor MockEngine, fakes a mano porque MockK no corre en Native) y `ArticleDetailPaneViewModelTest` (5). Suite: 42 tests en `:shared` + 17 en `:app`
+  - Documentado que `./gradlew test` **no** corre `:shared`, que `:shared:allTests` sigue necesitando runtime de simulador iOS, y los comandos `testAndroidHostTest` / `testDebugUnitTest` / `koverVerify` / `koverXmlReport` / `koverHtmlReport` / `koverHtmlReportDebug`
+  - Corregidos datos obsoletos: tabla de jobs del CI (3 → 5 jobs reales), ejemplo de integración con MockWebServer → MockEngine, `MainCoroutineTestRule` → `MainDispatcherRule` real, JUnit 5 → JUnit 4, KSP "Room + Hilt" → solo Room
+  - Nota: la línea hermana `android-native` tiene además Robolectric 4.17 (`sdk=34`), Room in-memory real, MockWebServer y ratchet 60; no aplica a `main`
+
 ## 2026-08-05 (3)
 
 - **Fase 5 de [[patterns/kmp-migration]] completada** (commits `b8a00e4`, `af3e75c`) — abstracciones de plataforma
