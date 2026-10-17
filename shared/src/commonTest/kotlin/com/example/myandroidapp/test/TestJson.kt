@@ -1,5 +1,10 @@
 package com.example.myandroidapp.test
 
+/**
+ * Datos de prueba (fixtures, no dobles): respuestas JSON enlatadas con el mismo contrato que el
+ * backend (snake_case: `image_url`, `news_site`, `published_at`). Se usan como body del STUB
+ * [testApiService] en `:shared/commonTest`.
+ */
 object TestJson {
     val ARTICLE_RESPONSE = """
     {

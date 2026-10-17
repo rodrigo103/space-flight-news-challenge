@@ -6,8 +6,20 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+/**
+ * Tests de los mappers [ArticleEntity] ↔ [Article]: transformaciones puras campo a campo, con
+ * los datos de entrada construidos a mano en cada test.
+ *
+ * Dobles usados:
+ * - Ninguno: el SUT son funciones puras (mappers) y los inputs son fixtures inline; no hay
+ *   colaboradores que doblar.
+ *
+ * Estilos (state/behavioral):
+ * - STATE: los 4 tests — tabla de casos entrada → salida, sin interacciones que verificar.
+ */
 class ArticleMappersTest {
 
+    // STATE — tabla de casos: cada campo de la entity llega al article de dominio.
     @Test
     fun `toArticle maps all fields correctly`() {
         val entity = ArticleEntity(
@@ -31,6 +43,7 @@ class ArticleMappersTest {
         assertEquals("https://example.com/article", article.url)
     }
 
+    // STATE — nulls preservados: los campos opcionales nulos quedan nulos en el dominio.
     @Test
     fun `toArticle handles null fields`() {
         val entity = ArticleEntity(
@@ -50,6 +63,7 @@ class ArticleMappersTest {
         assertNull(article.publishedAt)
     }
 
+    // STATE — dirección inversa: cada campo del dominio llega a la entity.
     @Test
     fun `toEntity maps all fields correctly`() {
         val article = Article(
@@ -73,6 +87,8 @@ class ArticleMappersTest {
         assertEquals(article.url, entity.url)
     }
 
+    // STATE — roundtrip: entity → article → entity conserva el valor (la data class compara
+    // por valor).
     @Test
     fun `roundtrip entity to article to entity preserves data`() {
         val entity = ArticleEntity(

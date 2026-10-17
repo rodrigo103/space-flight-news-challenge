@@ -3,6 +3,8 @@ package com.example.myandroidapp.test
 import com.example.myandroidapp.domain.model.Article
 
 /**
+ * Datos de prueba (fixtures, no dobles).
+ *
  * Duplica a propósito el fixture de `:shared/commonTest`: los source sets de test de KMP no se
  * publican a los consumidores, así que `:app` no puede importarlo. Son tres constantes; montar
  * publicación de artefactos de test para evitar la duplicación no vale la pena.

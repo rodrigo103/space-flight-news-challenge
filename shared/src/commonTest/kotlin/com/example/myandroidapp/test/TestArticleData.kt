@@ -2,6 +2,10 @@ package com.example.myandroidapp.test
 
 import com.example.myandroidapp.domain.model.Article
 
+/**
+ * Datos de prueba (fixtures, no dobles): articles de dominio enlatados con ids y textos
+ * predecibles, para las aserciones de los tests de `:shared/commonTest`.
+ */
 object TestArticleData {
     val article1 = Article(
         id = 1, title = "Article 1", summary = "Summary 1",

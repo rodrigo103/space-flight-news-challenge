@@ -2,6 +2,11 @@ package com.example.myandroidapp.test
 
 import com.example.myandroidapp.domain.model.Article
 
+/**
+ * Datos de prueba (fixtures, no dobles) para los tests instrumentados: articles de dominio con
+ * títulos/summaries predecibles que las aserciones de semántica buscan por texto; `articles`
+ * alimenta los `PagingData.from(...)` de las pantallas.
+ */
 object TestFixtures {
     val article1 = Article(
         id = 1,

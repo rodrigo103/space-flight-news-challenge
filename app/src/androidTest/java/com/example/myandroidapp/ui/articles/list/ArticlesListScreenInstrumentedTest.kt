@@ -19,11 +19,26 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
+/**
+ * Tests instrumentados de [ArticlesListScreen] con `createComposeRule`: se monta el composable
+ * real con `ArticlesListAttributes`/`ArticlesListActions` fijos y se assertea el árbol de
+ * semántica. Sin dobles: `PagingData` y fixtures son objetos reales.
+ *
+ * Dobles usados:
+ * - Ninguno: composable real + `TestFixtures` (datos de prueba) + `emptyPagingData()` (fixture de
+ *   PagingData real con load states) + `createComposeRule` (infraestructura de test).
+ *
+ * Estilos (state/behavioral):
+ * - STATE: los tests de render (vacío, lista, sin resultados, news sites), leídos de la semántica.
+ * - BEHAVIORAL: `searchBarUpdatesQuery`, `clearSearchButtonResetsQuery` y
+ *   `clickingArticleCallsOnArticleClick` (interacciones que disparan callbacks registrados).
+ */
 class ArticlesListScreenInstrumentedTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    // STATE — estado vacío: con un PagingData sin items ya cargados se muestra "No articles available".
     @Test
     fun showsEmptyStateWhenNoArticles() {
         composeTestRule.setContent {
@@ -45,6 +60,7 @@ class ArticlesListScreenInstrumentedTest {
         composeTestRule.onNodeWithText("No articles available").assertIsDisplayed()
     }
 
+    // STATE — los títulos de los fixtures aparecen en la lista (árbol de semántica).
     @Test
     fun showsArticlesInList() {
         val pagingData = PagingData.from(TestFixtures.articles)
@@ -69,6 +85,7 @@ class ArticlesListScreenInstrumentedTest {
         composeTestRule.onNodeWithText("NASA Mars Rover Update").assertIsDisplayed()
     }
 
+    // BEHAVIORAL — el input dispara onSearchTextChange: el `query` registrado refleja "mars".
     @Test
     fun searchBarUpdatesQuery() {
         var query by mutableStateOf("")
@@ -93,6 +110,7 @@ class ArticlesListScreenInstrumentedTest {
         assertEquals("mars", query)
     }
 
+    // BEHAVIORAL — el click en "Clear search" dispara onClearSearch: `query` vuelve a "".
     @Test
     fun clearSearchButtonResetsQuery() {
         var query by mutableStateOf("nasa")
@@ -117,6 +135,8 @@ class ArticlesListScreenInstrumentedTest {
         assertEquals("", query)
     }
 
+    // BEHAVIORAL — el click en un título dispara onArticleClick con el id del artículo
+    // (`clickedIds` registra y se assertea).
     @Test
     fun clickingArticleCallsOnArticleClick() {
         val clickedIds = mutableListOf<Int>()
@@ -144,6 +164,8 @@ class ArticlesListScreenInstrumentedTest {
         assertEquals(1, clickedIds.first())
     }
 
+    // STATE — con searchQuery no vacío y sin items, el vacío que se muestra es el de búsqueda
+    // ("No results found").
     @Test
     fun showsNoResultsWhenSearchHasNoMatches() {
         val pagingData = emptyPagingData()
@@ -167,6 +189,7 @@ class ArticlesListScreenInstrumentedTest {
         composeTestRule.onNodeWithText("No results found").assertIsDisplayed()
     }
 
+    // STATE — cada card muestra el news site del fixture ("Space.com", "NASA").
     @Test
     fun showsCorrectNewsSiteOnArticleCard() {
         val pagingData = PagingData.from(TestFixtures.articles)

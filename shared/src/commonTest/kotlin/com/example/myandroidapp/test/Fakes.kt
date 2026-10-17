@@ -20,7 +20,9 @@ import kotlinx.coroutines.flow.flowOf
 import androidx.paging.PagingData
 
 /**
- * MockK no corre en Kotlin/Native, así que los dobles de prueba son fakes escritos a mano.
+ * FAKE — MockK no corre en Kotlin/Native, así que los dobles de prueba son fakes escritos a mano
+ * (implementación simplificada pero funcional). Este es funcional de verdad: un `MutableMap` como
+ * storage real; `inserted` expone lo persistido y las queries de paging no se ejercitan.
  */
 class FakeArticleDao(
     initial: List<ArticleEntity> = emptyList(),
@@ -51,6 +53,11 @@ class FakeArticleDao(
         throw NotImplementedError("Paging no se testea acá")
 }
 
+/**
+ * FAKE — versión simplificada pero funcional del repositorio: campos configurables
+ * (`articleResult`, `cachedArticle`, `getArticleDelayMs`) que cada test setea antes de invocar, y
+ * `getArticleCallCount` para quien quiera verificar llamadas (no se usa en los tests actuales).
+ */
 class FakeArticlesRepository : ArticlesRepository {
     var articleResult: ApiResult<Article> = ApiResult.Failure(IllegalStateException("not set"))
     var cachedArticle: Article? = null
@@ -76,14 +83,19 @@ class FakeArticlesRepository : ArticlesRepository {
         flowOf(PagingData.empty())
 }
 
-/** Registra las requests que pasaron por el engine, para poder assertear query params. */
+/**
+ * SPY — registra las interacciones (las URLs de las requests que pasan por el engine) para poder
+ * assertearlas después: query params, params de búsqueda, etc.
+ */
 class RecordedRequests {
     val urls = mutableListOf<String>()
 }
 
 /**
- * Cliente con la MISMA configuración que producción (`configureApiClient`), montado sobre
- * `MockEngine`. Así el mapeo de status codes a `ApiException` que se testea es el real.
+ * Helper que arma un STUB — cliente con la MISMA configuración que producción
+ * (`configureApiClient`), montado sobre `MockEngine`: responde status/body enlatados a toda
+ * request. Así el mapeo de status codes a `ApiException` que se testea es el real. Si recibe un
+ * [RecordedRequests] (SPY), además registra las URLs.
  */
 fun testApiService(
     status: HttpStatusCode = HttpStatusCode.OK,
