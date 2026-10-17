@@ -83,6 +83,7 @@ kover {
                     "*.R\$*",
                     "*.BuildConfig",
                     "*_Impl*",
+                    "*DatabaseConstructor",
                     "*Preview*",
                     "ComposableSingletons*",
                 )
