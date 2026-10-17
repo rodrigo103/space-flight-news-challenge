@@ -26,6 +26,23 @@ import org.robolectric.shadows.ShadowNetworkCapabilities
  *
  * Runs in the `androidHostTest` source set of `:shared` (KMP host tests on the JVM). SDK is pinned
  * because Robolectric's SDK 36 requires Java 21 and this project targets Java 17.
+ *
+ * Dobles usados:
+ * - `shadowConnectivityManager` ([ShadowConnectivityManager] de Robolectric) → FAKE del framework:
+ *   implementación simplificada pero funcional de [ConnectivityManager].
+ * - Los setters (`setActiveNetworkInfo`, `setNetworkCapabilities`) → uso STUB: dejan estado
+ *   enlatado que consume el SUT al snapshotear.
+ * - `capabilities(internet)` vía [ShadowNetworkCapabilities] → STUB: respuesta fija a
+ *   `hasCapability(NET_CAPABILITY_INTERNET)`.
+ * - Leer `shadowConnectivityManager.networkCallbacks` → uso SPY: registra las interacciones
+ *   (callbacks registrados/desregistrados) para assertearlas.
+ * - Robolectric y Turbine → infraestructura de test, no son dobles.
+ *
+ * Estilos (state/behavioral):
+ * - STATE: los 3 snapshots iniciales, los 4 tests de eventos del callback y `repeated states…`.
+ * - BEHAVIORAL: `collecting registers a network callback` y `cancelling collection unregisters…`.
+ *
+ * Entorno: source set `androidHostTest` de KMP (JVM), con `@Config(sdk = [34])`.
  */
 @Config(sdk = [34])
 @RunWith(RobolectricTestRunner::class)
@@ -33,6 +50,8 @@ class AndroidConnectivityObserverTest {
 
     private lateinit var context: Context
     private lateinit var connectivityManager: ConnectivityManager
+    // FAKE del framework — el shadow de Robolectric es una implementación simplificada pero
+    // funcional de ConnectivityManager: guarda estado real y dispara callbacks de verdad.
     private lateinit var shadowConnectivityManager: ShadowConnectivityManager
 
     @Before
@@ -45,6 +64,7 @@ class AndroidConnectivityObserverTest {
 
     private fun observer() = AndroidConnectivityObserver(context)
 
+    // STUB — NetworkCapabilities enlatado: respuesta fija a `hasCapability(NET_CAPABILITY_INTERNET)`.
     private fun capabilities(internet: Boolean): NetworkCapabilities =
         ShadowNetworkCapabilities.newInstance().also { capabilities ->
             if (internet) {
@@ -57,10 +77,16 @@ class AndroidConnectivityObserverTest {
             "Robolectric always reports an active network unless the test clears it"
         }
 
+    // Uso SPY — `networkCallbacks` registra las interacciones (los callbacks que registró el SUT)
+    // para dispararles eventos y assertear la registración/desregistración.
     private fun registeredCallback() = shadowConnectivityManager.networkCallbacks.single()
 
+    // STATE — aserción sobre el primer snapshot del flow (Unavailable): importa el estado
+    // emitido. El "sin red" se enlata con un setter del shadow (uso STUB).
     @Test
     fun `snapshot is unavailable when there is no active network`() = runTest {
+        // Uso STUB — `setActiveNetworkInfo`/`setNetworkCapabilities` dejan estado fijo que el
+        // SUT consume al snapshotear.
         shadowConnectivityManager.setActiveNetworkInfo(null)
 
         observer().status.test {
@@ -68,6 +94,7 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // STATE — mismo formato: capabilities sin INTERNET (STUB) ⇒ el snapshot emite Unavailable.
     @Test
     fun `snapshot is unavailable when the active network has no internet capability`() = runTest {
         shadowConnectivityManager.setNetworkCapabilities(activeNetwork, capabilities(internet = false))
@@ -77,6 +104,7 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // STATE — el snapshot inicial respeta las capabilities con INTERNET (STUB) ⇒ Available.
     @Test
     fun `snapshot is available when the active network has internet capability`() = runTest {
         shadowConnectivityManager.setNetworkCapabilities(activeNetwork, capabilities(internet = true))
@@ -86,6 +114,8 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // BEHAVIORAL — verifica la interacción con el framework: al colectar, el SUT registra
+    // exactamente un NetworkCallback (leído del shadow, uso SPY).
     @Test
     fun `collecting registers a network callback`() = runTest {
         observer().status.test {
@@ -95,6 +125,8 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // STATE — transición del flow: Unavailable → Available al disparar `onAvailable` sobre el
+    // callback registrado.
     @Test
     fun `status turns available when a network becomes available`() = runTest {
         observer().status.test {
@@ -106,6 +138,7 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // STATE — transición Available → Unavailable disparando `onLost` sobre el callback.
     @Test
     fun `status turns unavailable when the network is lost`() = runTest {
         shadowConnectivityManager.setNetworkCapabilities(activeNetwork, capabilities(internet = true))
@@ -119,6 +152,7 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // STATE — transición a Unavailable cuando el request se marca `onUnavailable`.
     @Test
     fun `status turns unavailable when the network request is unfulfilled`() = runTest {
         shadowConnectivityManager.setNetworkCapabilities(activeNetwork, capabilities(internet = true))
@@ -132,6 +166,8 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // STATE — el flow sigue los cambios de capability: Available ↔ Unavailable según
+    // `onCapabilitiesChanged` (las capabilities las provee el STUB `capabilities()`).
     @Test
     fun `status follows capability changes reported for the network`() = runTest {
         observer().status.test {
@@ -145,6 +181,8 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // STATE — contrato de emisiones del flow (`distinctUntilChanged`): eventos repetidos no
+    // re-emiten (`expectNoEvents`) y solo se emite al cambiar de estado.
     @Test
     fun `repeated states are not re-emitted`() = runTest {
         shadowConnectivityManager.setNetworkCapabilities(activeNetwork, capabilities(internet = true))
@@ -166,6 +204,8 @@ class AndroidConnectivityObserverTest {
         }
     }
 
+    // BEHAVIORAL — verificación de la interacción de cleanup: al cancelar la colección, el SUT
+    // desregistra el callback (el shadow queda sin callbacks — lectura del SPY).
     @Test
     fun `cancelling collection unregisters the network callback`() = runTest {
         observer().status.test {
