@@ -103,10 +103,10 @@ kover {
                 }
             }
             verify {
-                // Piso "ratchet": fijado apenas debajo del valor actual (2026-10-17, ~57%).
-                // Subir a medida que la suite crece — nunca bajarlo.
+                // Piso "ratchet": apenas debajo del valor actual (2026-10-17: 70% con los
+                // tests de RemoteMediator y PaneViewModel). Subir, nunca bajar.
                 rule("Logica (data + domain + VMs)") {
-                    minBound(55)
+                    minBound(65)
                 }
             }
         }
