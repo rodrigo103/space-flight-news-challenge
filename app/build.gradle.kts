@@ -25,6 +25,12 @@ android {
         localeFilters += setOf("en", "es")
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -114,10 +120,10 @@ kover {
                 }
             }
             verify {
-                // Piso "ratchet": fijado apenas debajo del valor actual (2026-10-17, ~47%).
-                // Subir a medida que la suite crece — nunca bajarlo.
+                // Piso "ratchet": apenas debajo del valor actual (2026-10-17: 63% con los
+                // tests de DAO/RemoteMediator/PaneViewModel). Subir, nunca bajar.
                 rule("Logica (data + domain + VMs)") {
-                    minBound(45)
+                    minBound(60)
                 }
             }
         }
@@ -156,6 +162,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.mockwebserver)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
     testImplementation(libs.turbine)
 
     // Instrumented tests: jUnit rules and runners
