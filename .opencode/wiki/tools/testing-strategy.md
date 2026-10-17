@@ -5,7 +5,7 @@ tags:
 
 # Testing Strategy
 
-> **Last verified:** 2026-10-17 | **Verified by:** [source] — cobertura migrada a Kover 0.9.11 (ratchet 65) y suite actualizada a 42 tests en `:shared` + 17 en `:app`
+> **Last verified:** 2026-10-17 | **Verified by:** [source] — cobertura migrada a Kover 0.9.11 (ratchet 75) y suite actualizada a 52 tests en `:shared` + 17 en `:app`
 
 ## Stack de testing
 
@@ -17,9 +17,10 @@ El stack está **partido en dos** desde la migración a KMP: lo que corre en las
 | **Ktor MockEngine** | `:shared/commonTest` | HTTP mocking — reemplaza a MockWebServer |
 | **Fakes a mano** | `:shared/commonTest` | Dobles de prueba — reemplazan a MockK |
 | kotlinx.coroutines.test | ambos | `runTest`, `StandardTestDispatcher` |
-| Turbine | ambos (declarado) | Flow testing — hoy sin usos, ver nota |
+| Turbine | `:shared` | Flow testing — secuencias de estado (ver nota) |
 | JUnit 4 + MockK | `:app/src/test` | Tests de ViewModel (`SavedStateHandle`) |
 | Compose UI Test | `:app/src/androidTest` | Instrumentados |
+| Robolectric 4.17 | `:shared/androidHostTest` | Android framework en JVM (`@Config(sdk = [34])`) |
 
 ### Por qué cambió
 
@@ -51,7 +52,7 @@ fun testApiService(
 ### Cómo correrlos
 
 ```bash
-./gradlew :shared:testAndroidHostTest   # commonTest en JVM — 42 tests
+./gradlew :shared:testAndroidHostTest   # commonTest + androidHostTest en JVM — 52 tests
 ./gradlew :app:testDebugUnitTest        # ViewModels de :app — 17 tests
 ./gradlew test                          # unit tests de :app (debug + release); NO corre :shared
 ./gradlew :shared:allTests              # ⚠️ requiere runtime de simulador iOS
@@ -59,7 +60,7 @@ fun testApiService(
 
 `allTests` intenta ejecutar en simulador y falla con *"Xcode does not support simulator tests for ios_simulator_arm64"* si no hay runtime instalado (`xcodebuild -downloadPlatform iOS`). Los tests **compilan y linkean** para iOS igual. [gap]
 
-`withHostTest {}` en el bloque `androidLibrary` es lo que habilita correr `commonTest` en JVM; sin eso, la única forma es el simulador.
+`withHostTest {}` en el bloque `androidLibrary` es lo que habilita correr `commonTest` en JVM; sin eso, la única forma es el simulador. El source set `androidHostTest` (mismo target) aloja tests Android-específicos que corren en JVM: ahí vive `AndroidConnectivityObserverTest` con Robolectric.
 
 ## Tipos de tests
 
@@ -119,7 +120,7 @@ viewModel.description.test {
 }
 ```
 
-Turbine está declarado en ambos módulos, pero hoy ningún test lo usa: los tests del pane VM avanzan el dispatcher con `mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()` y leen `uiState.value`. [source]
+Turbine se usa en `AndroidConnectivityObserverTest` (secuencias con `awaitItem`/`expectNoEvents`). Los tests del pane VM, en cambio, avanzan el dispatcher con `mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()` y leen `uiState.value`. [source]
 
 ## Patrones avanzados
 
@@ -193,13 +194,13 @@ Para detectar regresiones visuales. Captura screenshots en múltiples dispositiv
 
 La cobertura la mide **Kover 0.9.11** (`org.jetbrains.kotlinx.kover`), aplicado en `:app` y `:shared`. Reemplazó a JaCoCo: se eliminaron el plugin `jacoco`, el flag `enableUnitTestCoverage` y el task manual `jacocoTestReport`. [source]
 
-El **reporte "total"** — el que consume SonarCloud y el que gatea el CI — está scopeado a la **capa lógica**: packages `com.example.myandroidapp.data` + `com.example.myandroidapp.domain` y clases `*ViewModel*`. Excluye el código generado (`*.R`, `*.BuildConfig`, `*_Impl*`, `*Preview*`, `ComposableSingletons*`), y el package `di`. La UI Compose no entra en el gate: se valida con tests instrumentados y se inspecciona a mano en `koverHtmlReportDebug`. [source]
+El **reporte "total"** — el que consume SonarCloud y el que gatea el CI — está scopeado a la **capa lógica**: packages `com.example.myandroidapp.data` + `com.example.myandroidapp.domain` y clases `*ViewModel*`. Excluye el código generado (`*.R`, `*.BuildConfig`, `*_Impl*`, `*DatabaseConstructor`, `*Preview*`, `ComposableSingletons*`), y el package `di`. La UI Compose no entra en el gate: se valida con tests instrumentados y se inspecciona a mano en `koverHtmlReportDebug`. [source]
 
-El umbral es un **ratchet**: `verify { rule("Logica (data + domain + VMs)") { minBound(65) } }` en `app/build.gradle.kts`. La cobertura lógica actual ronda el 70%; el piso se sube, nunca se baja. El job `unit-tests` del CI corre `./gradlew test :app:koverVerify` y rompe el build si cae por debajo. [source]
+El umbral es un **ratchet**: `verify { rule("Logica (data + domain + VMs)") { minBound(75) } }` en `app/build.gradle.kts`. La cobertura lógica actual ronda el 81%; el piso se sube, nunca se baja. El job `unit-tests` del CI corre `./gradlew test :app:koverVerify` y rompe el build si cae por debajo. [source]
 
 | Comando | Qué genera |
 |---|---|
-| `./gradlew :app:koverVerify` | Aplica el umbral (65) — falla el build si la cobertura lógica no llega |
+| `./gradlew :app:koverVerify` | Aplica el umbral (75) — falla el build si la cobertura lógica no llega |
 | `./gradlew :app:koverXmlReport` | XML JaCoCo-compatible (`app/build/reports/kover/report.xml`) para SonarCloud |
 | `./gradlew :app:koverHtmlReport` | HTML del reporte "total" (solo lógica) |
 | `./gradlew :app:koverHtmlReportDebug` | HTML de `:app` completa, incluye UI Compose |
@@ -212,7 +213,7 @@ El `SONAR_TOKEN` puede estar vencido (~90 días de vida). Síntoma: el job de `s
 
 ### Nota: línea `android-native`
 
-En la línea hermana `android-native` (Android nativo puro, mismo repo) también hay Kover, pero con ratchet **60**, y además Robolectric 4.17 (`sdk=34` en `robolectric.properties` — SDK 36 pide Java 21), tests de DAO con Room in-memory real y MockWebServer. No aplica a `main`. [source]
+En la línea hermana `android-native` (Android nativo puro, mismo repo) también hay Kover, pero con ratchet **70**, y además tests de DAO con Room in-memory real y MockWebServer en `:app`. En `main`, Robolectric corre en `:shared/androidHostTest`; en ambas líneas el SDK está pinneado a 34 (SDK 36 de Robolectric pide Java 21). [source]
 
 ## Archivos de testing en el proyecto
 
@@ -224,6 +225,7 @@ En la línea hermana `android-native` (Android nativo puro, mismo repo) también
 | `data/remote/ApiServiceTest.kt` | `:shared` | Integration | Parser y mapeo de status codes (11) |
 | `data/ArticlesRepositoryTest.kt` | `:shared` | Integration | Pipeline completo (13) |
 | `data/local/ArticleRemoteMediatorTest.kt` | `:shared` | Integration | Mediator: refresh/append/prepend, search, errores (8) |
+| `data/connectivity/AndroidConnectivityObserverTest.kt` | `:shared` (androidHostTest) | Integration | Observer: snapshot, callbacks, dedup, unregister (10) |
 | `data/mappers/ArticleMappersTest.kt` | `:shared` | Unit | Mappers Entity ↔ Domain (4) |
 | `domain/usecase/GetArticleUseCaseTest.kt` | `:shared` | Unit | Timeout + fallback de cache (6) |
 | `test/MainDispatcherRule.kt` | `:app` | Rule | Test CoroutineDispatcher |
@@ -231,7 +233,7 @@ En la línea hermana `android-native` (Android nativo puro, mismo repo) también
 | `ui/articles/detail/ArticleDetailViewModelTest.kt` | `:app` | Unit | Detail states (6) |
 | `ui/articles/detail/ArticleDetailPaneViewModelTest.kt` | `:app` | Unit | Pane states + analytics (5) |
 
-Totales al 2026-10-17: **42** tests en `:shared` (`testAndroidHostTest`) y **17** en `:app` (`testDebugUnitTest`). [source]
+Totales al 2026-10-17: **52** tests en `:shared` (`testAndroidHostTest`) y **17** en `:app` (`testDebugUnitTest`). [source]
 
 ## Ver también
 

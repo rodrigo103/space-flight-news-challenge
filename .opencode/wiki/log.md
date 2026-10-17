@@ -11,6 +11,8 @@
   - Documentado que `./gradlew test` **no** corre `:shared`, que `:shared:allTests` sigue necesitando runtime de simulador iOS, y los comandos `testAndroidHostTest` / `testDebugUnitTest` / `koverVerify` / `koverXmlReport` / `koverHtmlReport` / `koverHtmlReportDebug`
   - Corregidos datos obsoletos: tabla de jobs del CI (3 → 5 jobs reales), ejemplo de integración con MockWebServer → MockEngine, `MainCoroutineTestRule` → `MainDispatcherRule` real, JUnit 5 → JUnit 4, KSP "Room + Hilt" → solo Room
   - Nota: la línea hermana `android-native` tiene además Robolectric 4.17 (`sdk=34`), Room in-memory real, MockWebServer y ratchet 60; no aplica a `main`
+  - **Conectividad en `:shared`** (commit `8c8f509`): `AndroidConnectivityObserverTest` (10 tests) en el nuevo source set `androidHostTest` con Robolectric 4.17 (`@Config(sdk = [34])`) — primer uso de Robolectric en `main`. Ratchet subido a **75** (cobertura lógica 81%)
+  - **Excludes**: sumado `*DatabaseConstructor` (Room KMP generado) al filtro de Kover (commit `bdb09a3`)
 
 ## 2026-08-05 (3)
 

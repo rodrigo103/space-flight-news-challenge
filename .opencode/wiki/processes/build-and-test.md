@@ -25,7 +25,7 @@ tags:
 
 - `./gradlew test` — unit tests de `:app` (debug + release). ⚠️ **No** corre los de `:shared`
 - `./gradlew :app:testDebugUnitTest` — tests de ViewModel de `:app` (17 tests)
-- `./gradlew :shared:testAndroidHostTest` — `commonTest` de `:shared` en JVM (42 tests)
+- `./gradlew :shared:testAndroidHostTest` — `commonTest` + `androidHostTest` de `:shared` en JVM (52 tests; Robolectric corre acá)
 - `./gradlew :shared:allTests` — ⚠️ requiere runtime de simulador iOS (`xcodebuild -downloadPlatform iOS`)
 - `./gradlew connectedAndroidTest` — Instrumentados (Compose UI test + Espresso)
 
