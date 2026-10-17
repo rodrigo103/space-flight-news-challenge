@@ -10,6 +10,22 @@ Proyecto **Kotlin Multiplatform**: lógica compartida entre Android e iOS, UI na
 
 Migración en curso. Plan y estado en `.opencode/wiki/patterns/kmp-migration.md`.
 
+## Ramas del repo
+
+El repo mantiene dos líneas vivas en paralelo:
+
+| Rama | Rol | Base |
+|---|---|---|
+| `main` | Troncal KMP: `:app` (Android) + `:shared` (KMP, Koin) | — |
+| `feat/ios-app` | WIP app iOS (SKIE + `iosApp/`) sobre `main` | `main` |
+| `android-native` | Línea Android nativo puro: `:app` + `:domain`, Hilt, sin KMP | tag `pre-kmp` (aa5080a) |
+
+Reglas:
+
+- **Nunca merge entre líneas** (divergen en módulos y DI): los cambios compartidos se portan con `git cherry-pick -x <sha>`, adaptando si tocan data layer o DI.
+- **Desarrollo dual:** toda feature nueva se implementa en ambas líneas; en el mensaje de commit referenciá el espejo (`espejo de android-native@abc1234`).
+- Para que los portes apliquen limpios, mantené los mismos paths en la capa UI (`app/src/main/java/.../ui/...` coincide en ambas líneas).
+
 ## Build & Test
 
 - `./gradlew assembleDebug` — build de debug
