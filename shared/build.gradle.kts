@@ -71,6 +71,11 @@ kotlin {
             implementation(libs.ktor.client.mock)
             implementation(libs.turbine)
         }
+
+        getByName("androidHostTest").dependencies {
+            implementation(libs.robolectric)
+            implementation(libs.androidx.test.core)
+        }
     }
 }
 
@@ -101,6 +106,7 @@ detekt {
             "src/androidMain/kotlin",
             "src/iosMain/kotlin",
             "src/commonTest/kotlin",
+            "src/androidHostTest/kotlin",
         ),
     )
 }

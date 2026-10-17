@@ -104,10 +104,10 @@ kover {
                 }
             }
             verify {
-                // Piso "ratchet": apenas debajo del valor actual (2026-10-17: 70% con los
-                // tests de RemoteMediator y PaneViewModel). Subir, nunca bajar.
+                // Piso "ratchet": apenas debajo del valor actual (2026-10-17: 81% tras sumar
+                // los tests de conectividad en androidHostTest). Subir, nunca bajar.
                 rule("Logica (data + domain + VMs)") {
-                    minBound(65)
+                    minBound(75)
                 }
             }
         }
