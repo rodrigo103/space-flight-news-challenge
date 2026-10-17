@@ -2,6 +2,13 @@ package com.example.myandroidapp
 
 import com.example.myandroidapp.domain.model.Article
 
+/**
+ * Fixtures (no dobles): instancias canónicas de [Article] reutilizadas por los tests unitarios que
+ * necesitan un dominio válido sin construirlo a mano en cada caso.
+ *
+ * Son datos de entrada inertes: no devuelven respuestas ni registran llamadas, así que no
+ * pertenecen a la taxonomía de test doubles.
+ */
 object TestArticleData {
     val article1 = Article(
         id = 1, title = "Article 1", summary = "Summary 1",

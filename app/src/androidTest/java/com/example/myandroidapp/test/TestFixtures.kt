@@ -2,6 +2,10 @@ package com.example.myandroidapp.test
 
 import com.example.myandroidapp.domain.model.Article
 
+/**
+ * Fixtures (no dobles): artículos de ejemplo para los tests instrumentados de Compose, que los usan
+ * como datos de entrada (lista paging y detalle) sin construir artículos a mano en cada test.
+ */
 object TestFixtures {
     val article1 = Article(
         id = 1,

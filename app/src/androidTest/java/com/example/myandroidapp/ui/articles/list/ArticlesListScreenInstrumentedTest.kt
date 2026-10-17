@@ -19,11 +19,27 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
+/**
+ * Test instrumentado de UI del [ArticlesListScreen] con Compose: corre en device/emulador y
+ * assertea sobre el árbol de semántica. Las entradas son reales: `PagingData.from(...)` +
+ * `flowOf(...)` (sin dobles) y [TestFixtures] como datos de prueba.
+ *
+ * **Dobles usados:** ninguno — composables, Flows y Paging reales; `createComposeRule()` es
+ * infraestructura y el helper `emptyPagingData()` es un fixture de [PagingData] (no un doble).
+ *
+ * **Estilos (state/behavioral):** STATE en los tests que assertean lo visible para cada estado
+ * (vacío, lista, sin resultados, sitio de la card); BEHAVIORAL en los tres que registran un
+ * callback y verifican su invocación (input de búsqueda, limpiar búsqueda, click en artículo).
+ */
 class ArticlesListScreenInstrumentedTest {
 
+    // Infraestructura de test (no doble): regla de Compose que monta el contenido y sincroniza la
+    // UI con el test.
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    // STATE — con un PagingData real ya resuelto y vacío (fixture) se assertea el mensaje del
+    // estado vacío en el árbol de semántica. Sin dobles ni verificación de interacciones.
     @Test
     fun showsEmptyStateWhenNoArticles() {
         composeTestRule.setContent {
@@ -45,6 +61,8 @@ class ArticlesListScreenInstrumentedTest {
         composeTestRule.onNodeWithText("No articles available").assertIsDisplayed()
     }
 
+    // STATE — la lista paging real con los fixtures renderiza los títulos; aserción sobre nodos
+    // visibles del árbol de semántica.
     @Test
     fun showsArticlesInList() {
         val pagingData = PagingData.from(TestFixtures.articles)
@@ -69,6 +87,9 @@ class ArticlesListScreenInstrumentedTest {
         composeTestRule.onNodeWithText("NASA Mars Rover Update").assertIsDisplayed()
     }
 
+    // BEHAVIORAL — verificación de interacción: el text input debe invocar `onSearchTextChange`
+    // con el texto escrito. La lambda registrada muta el estado host y el assert comprueba esa
+    // invocación (no hay aserción sobre la UI en sí).
     @Test
     fun searchBarUpdatesQuery() {
         var query by mutableStateOf("")
@@ -93,6 +114,8 @@ class ArticlesListScreenInstrumentedTest {
         assertEquals("mars", query)
     }
 
+    // BEHAVIORAL — el click en "Clear search" debe invocar `onClearSearch`, que acá se registra
+    // reseteando el estado host; el assert sobre `query == ""` verifica esa interacción.
     @Test
     fun clearSearchButtonResetsQuery() {
         var query by mutableStateOf("nasa")
@@ -117,6 +140,8 @@ class ArticlesListScreenInstrumentedTest {
         assertEquals("", query)
     }
 
+    // BEHAVIORAL — patrón `clickedIds.add(...)` + assert: se verifica que el click en la card
+    // invoque el callback con el id correcto. Es verificación de interacción, no de UI renderizada.
     @Test
     fun clickingArticleCallsOnArticleClick() {
         val clickedIds = mutableListOf<Int>()
@@ -144,6 +169,8 @@ class ArticlesListScreenInstrumentedTest {
         assertEquals(1, clickedIds.first())
     }
 
+    // STATE — con `searchQuery` no vacío y paging vacío (fixture resuelto) se assertea el mensaje
+    // "No results found": aserción de estado visible.
     @Test
     fun showsNoResultsWhenSearchHasNoMatches() {
         val pagingData = emptyPagingData()
@@ -167,6 +194,8 @@ class ArticlesListScreenInstrumentedTest {
         composeTestRule.onNodeWithText("No results found").assertIsDisplayed()
     }
 
+    // STATE — la card real con datos de fixture muestra los sitios esperados ("Space.com", "NASA");
+    // aserción sobre el árbol de semántica.
     @Test
     fun showsCorrectNewsSiteOnArticleCard() {
         val pagingData = PagingData.from(TestFixtures.articles)

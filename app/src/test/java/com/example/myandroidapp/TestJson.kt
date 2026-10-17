@@ -1,5 +1,10 @@
 package com.example.myandroidapp
 
+/**
+ * Fixtures (no dobles): payloads JSON crudos que alimentan el STUB HTTP en los tests de red
+ * (`enqueueJson`). Son el body enlatado que consume Retrofit; el doble es el MockWebServer que lo
+ * sirve, no estas cadenas.
+ */
 object TestJson {
     val ARTICLE_RESPONSE = """
     {

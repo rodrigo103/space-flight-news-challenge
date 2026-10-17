@@ -6,8 +6,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
+/**
+ * Test puro de los mappers entity ↔ domain ([toArticle]/[toEntity]): sin dobles, sin Android,
+ * corre en JVM. Es el patrón de tabla de casos de la capa de mappers (nota 28, §1.4).
+ *
+ * **Dobles usados:** ninguno — entradas y salidas son instancias reales de [ArticleEntity] y
+ * [Article] construidas como datos de prueba. No hay colaboradores que stubear ni interacciones
+ * que verificar.
+ *
+ * **Estilos (state/behavioral):** 100% STATE — se assertea el objeto resultante campo a campo (o
+ * por igualdad de data classes en el roundtrip).
+ */
 class ArticleMappersTest {
 
+    // STATE — aserción campo a campo del objeto mapeado; la entrada es un dato de prueba real.
     @Test
     fun `toArticle maps all fields correctly`() {
         val entity = ArticleEntity(
@@ -31,6 +43,8 @@ class ArticleMappersTest {
         assertEquals("https://example.com/article", article.url)
     }
 
+    // STATE — borde del mapper: los campos opcionales nulos se preservan en el dominio; aserción
+    // sobre el estado del objeto resultante.
     @Test
     fun `toArticle handles null fields`() {
         val entity = ArticleEntity(
@@ -50,6 +64,8 @@ class ArticleMappersTest {
         assertNull(article.publishedAt)
     }
 
+    // STATE — dirección inversa (domain → entity): se assertea cada campo del resultado contra el
+    // objeto de entrada. Mismo estilo state que `toArticle`.
     @Test
     fun `toEntity maps all fields correctly`() {
         val article = Article(
@@ -73,6 +89,8 @@ class ArticleMappersTest {
         assertEquals(article.url, entity.url)
     }
 
+    // STATE — roundtrip entity → article → entity: la aserción es la igualdad estructural del
+    // data class final con el original. Cubre ambos mappers juntos sin interacciones.
     @Test
     fun `roundtrip entity to article to entity preserves data`() {
         val entity = ArticleEntity(
