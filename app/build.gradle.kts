@@ -120,10 +120,10 @@ kover {
                 }
             }
             verify {
-                // Piso "ratchet": apenas debajo del valor actual (2026-10-17: 63% con los
-                // tests de DAO/RemoteMediator/PaneViewModel). Subir, nunca bajar.
+                // Piso "ratchet": apenas debajo del valor actual (2026-10-17: 74% tras sumar
+                // DAO/RemoteMediator/PaneViewModel/Connectivity). Subir, nunca bajar.
                 rule("Logica (data + domain + VMs)") {
-                    minBound(60)
+                    minBound(70)
                 }
             }
         }
