@@ -9,6 +9,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.paging.LoadState
+import androidx.paging.LoadStates
 import androidx.paging.PagingData
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.test.TestFixtures
@@ -28,7 +30,7 @@ class ArticlesListScreenInstrumentedTest {
             ArticlesListScreen(
                 attributes = ArticlesListAttributes(
                     searchQuery = "",
-                    articles = flowOf(PagingData.empty()),
+                    articles = flowOf(emptyPagingData()),
                 ),
                 actions = ArticlesListActions(
                     onSearchTextChange = {},
@@ -144,7 +146,7 @@ class ArticlesListScreenInstrumentedTest {
 
     @Test
     fun showsNoResultsWhenSearchHasNoMatches() {
-        val pagingData = PagingData.empty<Article>()
+        val pagingData = emptyPagingData()
 
         composeTestRule.setContent {
             ArticlesListScreen(
@@ -188,4 +190,21 @@ class ArticlesListScreenInstrumentedTest {
         composeTestRule.onNodeWithText("Space.com").assertIsDisplayed()
         composeTestRule.onNodeWithText("NASA").assertIsDisplayed()
     }
+
+    /**
+     * A [PagingData] whose refresh load has already finished with no items, which is what a
+     * search without matches produces in the app.
+     *
+     * `PagingData.empty()` on its own carries no load states, and a cold `flowOf(...)` does not
+     * initialize the presenter the way the ViewModel's `cachedIn(...)` flow does, so
+     * `LazyPagingItems` would stay on [LoadState.Loading] and the screen would render the loading
+     * shimmer instead of the empty state.
+     */
+    private fun emptyPagingData(): PagingData<Article> = PagingData.empty(
+        sourceLoadStates = LoadStates(
+            refresh = LoadState.NotLoading(endOfPaginationReached = true),
+            prepend = LoadState.NotLoading(endOfPaginationReached = true),
+            append = LoadState.NotLoading(endOfPaginationReached = true),
+        ),
+    )
 }
