@@ -61,12 +61,12 @@ class ArticleDetailViewModelTest {
         assertTrue(viewModel.uiState.value is UiState.Loading)
     }
 
-    // STATE — el STUB devuelve un failure sin mensaje y se assertea el fallback del estado Error
+    // STATE — el STUB lanza una excepción sin mensaje y se assertea el fallback del estado Error
     // ("Unknown error"). El analytics relajado solo absorbe el logError del camino de fallo.
     @Test
     fun `null error message falls back to Unknown error`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.failure(Exception())
+        coEvery { getArticle(1) } throws Exception()
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,
@@ -88,7 +88,7 @@ class ArticleDetailViewModelTest {
         // DOBLE — MOCK: la instancia local que recibe el VM es la que se verifica con `verify`.
         val analytics = mockk<AnalyticsHelper>(relaxed = true)
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
+        coEvery { getArticle(1) } returns TestArticleData.articleDetail
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,
@@ -105,7 +105,7 @@ class ArticleDetailViewModelTest {
     @Test
     fun `loadArticle on success populates detail on success`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
+        coEvery { getArticle(1) } returns TestArticleData.articleDetail
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,
@@ -120,12 +120,12 @@ class ArticleDetailViewModelTest {
         assertEquals("Article Detail", data.article.title)
     }
 
-    // STATE — el STUB enlata un fallo y se assertea el estado Error con su mensaje; el analytics
+    // STATE — el STUB lanza la excepción y se assertea el estado Error con su mensaje; el analytics
     // relajado absorbe el logError sin que el test lo verifique.
     @Test
     fun `loadArticle on failure sets error`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.failure(Exception("Not found"))
+        coEvery { getArticle(1) } throws Exception("Not found")
 
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,

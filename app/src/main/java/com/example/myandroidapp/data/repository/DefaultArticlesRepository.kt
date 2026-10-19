@@ -11,6 +11,7 @@ import com.example.myandroidapp.data.mappers.toArticle
 import com.example.myandroidapp.data.remote.ApiService
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.domain.repository.ArticlesRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
@@ -22,25 +23,36 @@ class DefaultArticlesRepository @Inject constructor(
     private val apiService: ApiService,
     private val articleDao: ArticleDao,
 ) : ArticlesRepository {
-    override suspend fun getArticles(limit: Int, offset: Int): Result<List<Article>> =
-        runCatching {
+    // Sin wrapper de resultado: devuelve el valor y relanza la excepción tras loguearla.
+    // No se usa `runCatching` (ni `Result`): atraparía también CancellationException.
+    override suspend fun getArticles(limit: Int, offset: Int): List<Article> =
+        try {
             apiService.getArticles(limit = limit, offset = offset).results
-        }.onFailure {
-            Timber.e(it, "Error fetching articles")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching articles")
+            throw e
         }
 
-    override suspend fun searchArticles(query: String, limit: Int): Result<List<Article>> =
-        runCatching {
+    override suspend fun searchArticles(query: String, limit: Int): List<Article> =
+        try {
             apiService.getArticles(limit = limit, offset = 0, search = query).results
-        }.onFailure {
-            Timber.e(it, "Error searching articles with query: %s", query)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Error searching articles with query: %s", query)
+            throw e
         }
 
-    override suspend fun getArticle(id: Int): Result<Article> =
-        runCatching {
+    override suspend fun getArticle(id: Int): Article =
+        try {
             apiService.getArticle(id)
-        }.onFailure {
-            Timber.e(it, "Error fetching article with id: %d", id)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching article with id: %d", id)
+            throw e
         }
 
     override suspend fun getCachedArticle(id: Int): Article? =

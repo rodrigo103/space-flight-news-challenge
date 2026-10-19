@@ -6,12 +6,13 @@ import com.example.myandroidapp.data.remote.ApiService
 import com.example.myandroidapp.data.repository.DefaultArticlesRepository
 import com.example.myandroidapp.rules.MockWebServerRule
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -21,8 +22,8 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * Test de integración del [DefaultArticlesRepository] real contra un MockWebServer HTTP: cubre
- * juntos el contrato de red, la deserialización y el mapeo a `Result` de éxito/fallo (incluido
- * JSON malformado).
+ * juntos el contrato de red, la deserialización y el mapeo del contrato **valores + excepciones**
+ * (éxito devuelve el dato; el error se lanza como excepción, incluido el JSON malformado).
  *
  * **Dobles usados:**
  * - [serverRule] → STUB a nivel HTTP: `enqueueJson` fija las respuestas enlatadas. En
@@ -33,7 +34,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
  *   ejercita acá).
  * - NO son dobles: el `api` (Retrofit real contra el MockWebServer) ni [TestJson].
  *
- * **Estilos (state/behavioral):** casi todo STATE (éxito/fallo y contenido del `Result`);
+ * **Estilos (state/behavioral):** casi todo STATE (el valor devuelto o la excepción lanzada);
  * BEHAVIORAL en `getArticles with custom limit and offset`, que verifica los query params de la
  * request vía el spy.
  */
@@ -62,94 +63,98 @@ class ArticlesRepositoryTest {
         return DefaultArticlesRepository(api, dao)
     }
 
-    // STATE — el STUB devuelve un 200 y se assertea el `Result` resultante (success + contenido
-    // mapeado a dominio). La verificación es sobre el estado, no sobre la llamada al api.
+    /** Ejecuta [block] esperando que lance: devuelve la excepción (falla el test si no lanzó). */
+    private suspend fun expectFailure(block: suspend () -> Unit): Throwable {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            return e
+        }
+        throw AssertionError("Expected an exception, but the call succeeded")
+    }
+
+    private suspend fun expectHttpError(block: suspend () -> Unit): HttpException {
+        val error = expectFailure(block)
+        assertTrue("Expected HttpException, got $error", error is HttpException)
+        return error as HttpException
+    }
+
+    // STATE — el STUB devuelve un 200 y se assertea el valor resultante (lista mapeada a dominio).
+    // La verificación es sobre el estado, no sobre la llamada al api.
     @Test
-    fun `getArticles on 200 returns success`() = runTest {
+    fun `getArticles on 200 returns articles`() = runTest {
         serverRule.enqueueJson(200, TestJson.ARTICLE_RESPONSE)
 
-        val result = createRepository().getArticles()
+        val articles = createRepository().getArticles()
 
-        assertTrue(result.isSuccess)
-        val articles = result.getOrThrow()
         assertEquals(2, articles.size)
         assertEquals("Article 1", articles[0].title)
         assertEquals("Article 2", articles[1].title)
     }
 
-    // STATE — el contrato de error del repo: ante 500 el estado resultante es un `Result.failure`
-    // con la HttpException del código. Se assertea el outcome, sin verificar interacciones.
+    // STATE — el contrato de error del repo: ante 500 lanza la HttpException del código.
+    // Se assertea el outcome (excepción), sin verificar interacciones.
     @Test
-    fun `getArticles on 500 returns failure with HTTP code`() = runTest {
+    fun `getArticles on 500 throws HttpException with the code`() = runTest {
         serverRule.enqueueJson(500, """{"error":"Internal error"}""")
 
-        val result = createRepository().getArticles()
+        val error = expectHttpError { createRepository().getArticles() }
 
-        assertTrue(result.isFailure)
-        val error = result.exceptionOrNull()
-        assertNotNull(error)
-        assertTrue(error is HttpException)
-        assertEquals(500, (error as HttpException).code())
+        assertEquals(500, error.code())
     }
 
-    // STATE — borde del mismo contrato con 404: failure con HttpException. Sin dobles extra ni
+    // STATE — borde del mismo contrato con 404: se lanza HttpException. Sin dobles extra ni
     // verificación de la request.
     @Test
-    fun `getArticles on 404 returns failure`() = runTest {
+    fun `getArticles on 404 throws HttpException`() = runTest {
         serverRule.enqueueJson(404, """{"error":"Not found"}""")
 
-        val result = createRepository().getArticles()
-
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is HttpException)
+        expectHttpError { createRepository().getArticles() }
     }
 
-    // STATE — endpoint single: el STUB aporta el body y se assertea el éxito con el artículo
-    // mapeado; aserción de estado, no de interacción.
+    // STATE — endpoint single: el STUB aporta el body y se assertea el artículo devuelto;
+    // aserción de estado, no de interacción.
     @Test
-    fun `getArticle on 200 returns success`() = runTest {
+    fun `getArticle on 200 returns the article`() = runTest {
         serverRule.enqueueJson(200, TestJson.SINGLE_ARTICLE)
 
-        val result = createRepository().getArticle(1)
+        val article = createRepository().getArticle(1)
 
-        assertTrue(result.isSuccess)
-        assertEquals("Article Detail", result.getOrThrow().title)
+        assertEquals("Article Detail", article.title)
     }
 
-    // STATE — borde de error del endpoint single: 404 → failure con HttpException. Mismo estilo
-    // state que el resto de la matriz de códigos.
+    // STATE — borde de error del endpoint single: 404 → HttpException. Mismo estilo state que el
+    // resto de la matriz de códigos.
     @Test
-    fun `getArticle on 404 returns failure`() = runTest {
+    fun `getArticle on 404 throws HttpException`() = runTest {
         serverRule.enqueueJson(404, """{"error":"Not found"}""")
 
-        val result = createRepository().getArticle(999)
-
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is HttpException)
+        expectHttpError { createRepository().getArticle(999) }
     }
 
-    // STATE — el STUB sirve un body inválido y se assertea el estado: `runCatching` lo convierte
-    // en `Result.failure` (no propaga la excepción de serialización). No se inspecciona la causa.
+    // STATE — el STUB sirve un body inválido y el contrato propaga la excepción de serialización
+    // (ya no se convierte en un fallo enlatado). Se assertea el tipo de excepción lanzada.
     @Test
-    fun `getArticles on malformed JSON returns failure`() = runTest {
+    fun `getArticles on malformed JSON throws SerializationException`() = runTest {
         serverRule.enqueueJson(200, """{broken json}""")
 
-        val result = createRepository().getArticles()
+        val error = expectFailure { createRepository().getArticles() }
 
-        assertTrue(result.isFailure)
+        assertTrue("Expected SerializationException, got $error", error is SerializationException)
     }
 
-    // STATE — search devuelve un resultado filtrado enlatado; se assertea el estado del `Result`
+    // STATE — search devuelve el resultado filtrado enlatado; se assertea el valor devuelto
     // (éxito con 1 item y su título). El STUB de red solo aporta el body.
     @Test
     fun `searchArticles on 200 returns filtered results`() = runTest {
         serverRule.enqueueJson(200, TestJson.SEARCH_RESPONSE)
 
-        val result = createRepository().searchArticles("Article 1")
+        val articles = createRepository().searchArticles("Article 1")
 
-        assertTrue(result.isSuccess)
-        assertEquals(1, result.getOrThrow().size)
-        assertEquals("Article 1", result.getOrThrow()[0].title)
+        assertEquals(1, articles.size)
+        assertEquals("Article 1", articles[0].title)
     }
 
     // BEHAVIORAL — el contrato bajo test es *cómo* se pide la página: se verifica la request
@@ -166,27 +171,23 @@ class ArticlesRepositoryTest {
         assertEquals("5", request.requestUrl?.queryParameter("offset"))
     }
 
-    // STATE — borde de error del search: 500 → failure con HttpException. Verificación de estado
-    // del `Result`, sin asserciones de interacción.
+    // STATE — borde de error del search: 500 → HttpException lanzada. Verificación de estado del
+    // outcome, sin asserciones de interacción.
     @Test
-    fun `searchArticles on 500 returns failure`() = runTest {
+    fun `searchArticles on 500 throws HttpException`() = runTest {
         serverRule.enqueueJson(500, """{"error":"Server error"}""")
 
-        val result = createRepository().searchArticles("test")
-
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is HttpException)
+        expectHttpError { createRepository().searchArticles("test") }
     }
 
-    // STATE — caso borde del search: respuesta vacía enlatada → success con lista vacía. Se
-    // assertea el estado resultante, no la query enviada.
+    // STATE — caso borde del search: respuesta vacía enlatada → lista vacía devuelta. Se assertea
+    // el valor resultante, no la query enviada.
     @Test
     fun `searchArticles with empty results returns empty list`() = runTest {
         serverRule.enqueueJson(200, TestJson.EMPTY_RESPONSE)
 
-        val result = createRepository().searchArticles("nonexistent")
+        val articles = createRepository().searchArticles("nonexistent")
 
-        assertTrue(result.isSuccess)
-        assertEquals(0, result.getOrThrow().size)
+        assertEquals(0, articles.size)
     }
 }

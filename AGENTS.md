@@ -29,7 +29,7 @@ Reglas:
 
 - MVVM con `ViewModel` + `StateFlow<UiState>`.
 - `UiState` es una `sealed interface` con `Loading`, `Success<T>`, `Error`.
-- Repository devuelve `Result<T>`.
+- Repository devuelve valores y **lanza excepciones** en error (sin `Result` ni `ApiResult`); las VMs mapean a `UiState.Error` con try/catch.
 - Hilt DI con módulos por capa: `AppModule`, `NetworkModule`, `DatabaseModule`, `RepositoryModule`, etc.
 - Paging 3 con `RemoteMediator` para paginación desde API + Room.
 

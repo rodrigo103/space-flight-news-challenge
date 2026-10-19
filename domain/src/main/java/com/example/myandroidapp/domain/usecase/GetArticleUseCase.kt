@@ -2,7 +2,9 @@ package com.example.myandroidapp.domain.usecase
 
 import com.example.myandroidapp.domain.model.Article
 import com.example.myandroidapp.domain.repository.ArticlesRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 
 class GetArticleUseCase @Inject constructor(
@@ -12,17 +14,31 @@ class GetArticleUseCase @Inject constructor(
         private const val REQUEST_TIMEOUT_MS = 30_000L
     }
 
-    suspend operator fun invoke(articleId: Int): Result<Article> {
-        val networkResult = withTimeoutOrNull(REQUEST_TIMEOUT_MS) {
-            repository.getArticle(articleId)
+    /**
+     * Devuelve el artículo de red; si la red falla o se cuelga, cae a caché; si no hay caché,
+     * relanza la excepción original (o un timeout si lo que pasó fue el vencimiento del plazo).
+     *
+     * Sin wrapper de resultado: el camino feliz devuelve `Article` y el fallo es una excepción
+     * que decide el borde (el ViewModel la mapea a `UiState.Error`).
+     */
+    suspend operator fun invoke(articleId: Int): Article {
+        var networkError: Throwable? = null
+
+        val networkArticle = withTimeoutOrNull(REQUEST_TIMEOUT_MS) {
+            try {
+                repository.getArticle(articleId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                networkError = e
+                null
+            }
         }
 
-        val article = networkResult?.getOrNull()
-        if (article != null) return Result.success(article)
+        if (networkArticle != null) return networkArticle
 
-        val cached = repository.getCachedArticle(articleId)
-        if (cached != null) return Result.success(cached)
+        repository.getCachedArticle(articleId)?.let { return it }
 
-        return networkResult ?: Result.failure(Exception("Request timed out"))
+        throw networkError ?: TimeoutException("Request timed out")
     }
 }

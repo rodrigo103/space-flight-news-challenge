@@ -59,7 +59,7 @@ class ArticleDetailPaneViewModelTest {
         // STUB — mockk configurado con `coEvery { … } returns …`: respuesta enlatada, sin
         // verificación de interacciones sobre el UseCase.
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
+        coEvery { getArticle(1) } returns TestArticleData.articleDetail
         val viewModel = ArticleDetailPaneViewModel(getArticle, analytics)
 
         viewModel.loadArticle(1)
@@ -72,13 +72,13 @@ class ArticleDetailPaneViewModelTest {
         verify { analytics.logEvent("article_loaded", mapOf("id" to "1")) }
     }
 
-    // STATE + BEHAVIORAL (analytics) — el STUB devuelve Result.failure y se assertea el estado
+    // STATE + BEHAVIORAL (analytics) — el STUB lanza la excepción y se assertea el estado
     // Error con el mensaje; se suma la verificación de `logError` como efecto colateral.
     @Test
     fun `loadArticle failure emits Error with the message`() = runTest {
         // STUB — fija el resultado de fallo; el test no verifica interacciones del UseCase.
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.failure(Exception("boom"))
+        coEvery { getArticle(1) } throws Exception("boom")
         val viewModel = ArticleDetailPaneViewModel(getArticle, analytics)
 
         viewModel.loadArticle(1)
@@ -96,7 +96,7 @@ class ArticleDetailPaneViewModelTest {
     fun `loadArticle failure without message falls back to Unknown error`() = runTest {
         // STUB — mismo patrón: respuesta enlatada, acá un failure sin mensaje.
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.failure(Exception())
+        coEvery { getArticle(1) } throws Exception()
         val viewModel = ArticleDetailPaneViewModel(getArticle, analytics)
 
         viewModel.loadArticle(1)
@@ -111,7 +111,7 @@ class ArticleDetailPaneViewModelTest {
     fun `loadArticle keeps Loading until the request resolves`() = runTest {
         // STUB — respuesta enlatada que se resolverá recién al avanzar el scheduler.
         val getArticle = mockk<GetArticleUseCase>()
-        coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
+        coEvery { getArticle(1) } returns TestArticleData.articleDetail
         val viewModel = ArticleDetailPaneViewModel(getArticle, analytics)
 
         viewModel.loadArticle(1)
