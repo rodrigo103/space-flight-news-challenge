@@ -1,147 +1,162 @@
 package com.example.myandroidapp.ui.articles.detail
 
+import app.cash.turbine.test
 import androidx.lifecycle.SavedStateHandle
 import com.example.myandroidapp.TestArticleData
 import com.example.myandroidapp.analytics.AnalyticsHelper
 import com.example.myandroidapp.domain.usecase.GetArticleUseCase
 import com.example.myandroidapp.test.MainDispatcherRule
-import com.example.myandroidapp.ui.common.UiState
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 /**
- * Unit test del [ArticleDetailViewModel] en JVM puro: el UseCase se stubbea con MockK, el
- * `viewModelScope` se controla con [MainDispatcherRule] (virtual time) y el analytics se verifica
- * como mock en el test de logging.
+ * Unit test del [ArticleDetailViewModel] MVI en JVM puro.
+ *
+ * El `Retry` que dispara el `init` viaja por el Channel de intents y se procesa al avanzar el
+ * virtual time ([MainDispatcherRule]). Los efectos one-shot se consumen con Turbine.
  *
  * **Dobles usados:**
- * - `mockk<GetArticleUseCase>()` + `coEvery { … } returns …` → STUB: respuestas enlatadas, sin
- *   verificación de interacciones. Sin `coEvery` (tests que no lo ejercitan) funciona como DUMMY:
- *   se pasa al constructor y nunca se invoca.
- * - `analytics = mockk<AnalyticsHelper>(relaxed = true)` → MOCK en `logs event on success` (se
- *   verifica con `verify`; ahí el test usa una instancia local que shadowea la propiedad) y STUB
- *   relajado en el resto: absorbe llamadas fire-and-forget cuyas respuestas no importan.
- * - NO son dobles: `SavedStateHandle(...)` (objeto real de AndroidX) ni [MainDispatcherRule]
- *   (infraestructura de test).
+ * - `mockk<GetArticleUseCase>()` + `coEvery { … } returns …` → STUB: respuestas enlatadas. Sin
+ *   `coEvery` y sin avanzar el scheduler (test de estado inicial) actúa como DUMMY: nunca se
+ *   invoca.
+ * - `analytics = mockk<AnalyticsHelper>(relaxed = true)` → MOCK donde se verifica (`logs event on
+ *   success`, `delete …`); STUB relajado en el resto (absorbe logScreenView/logError).
+ * - NO son dobles: `SavedStateHandle(...)` ni [MainDispatcherRule].
  *
- * **Estilos (state/behavioral):** STATE para las transiciones de `uiState` (Loading →
- * Success/Error); BEHAVIORAL en `logs event on success` (verificación de interacción).
+ * **Estilos (state/behavioral):** STATE para las transiciones de `state`; BEHAVIORAL para el
+ * efecto de navegación del delete y para las interacciones de analytics.
  */
 class ArticleDetailViewModelTest {
 
-    // Infraestructura de test (no doble): Main → TestDispatcher para controlar el virtual time del
-    // viewModelScope con `advanceUntilIdle`.
+    // Infraestructura de test (no doble): Main → TestDispatcher para el viewModelScope.
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    // DOBLE — MOCK donde se verifica (`logs event on success`, con una instancia local) y STUB
-    // relajado en los tests de estado: absorbe los logScreenView/logError del VM sin assertearlos.
+    // DOBLE — MOCK donde se verifica; STUB relajado en los tests de estado.
     private val analytics = mockk<AnalyticsHelper>(relaxed = true)
 
-    // STATE — solo importa el estado inicial del ViewModel. El UseCase es DUMMY: se pasa sin
-    // `coEvery` y nunca se invoca (el `loadArticle()` del init queda encolado en el
-    // StandardTestDispatcher de la rule y el test no avanza el scheduler).
+    private fun createViewModel(getArticle: GetArticleUseCase) = ArticleDetailViewModel(
+        getArticle = getArticle,
+        analytics = analytics,
+        savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
+    )
+
+    private fun advance() = mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
+
+    // STATE — el estado inicial es Loading; el `Retry` del init todavía no se procesó porque no se
+    // avanzó el scheduler. El UseCase es DUMMY: se pasa y nunca se invoca en este test.
     @Test
     fun `initial state is Loading`() {
-        val getArticle = mockk<GetArticleUseCase>()
+        val viewModel = createViewModel(mockk(relaxed = true))
 
-        val viewModel = ArticleDetailViewModel(
-            getArticle = getArticle,
-            analytics = analytics,
-            savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
-        )
-
-        assertTrue(viewModel.uiState.value is UiState.Loading)
+        assertEquals(ArticleDetailUiState.Loading, viewModel.state.value)
     }
 
-    // STATE — el STUB devuelve un failure sin mensaje y se assertea el fallback del estado Error
-    // ("Unknown error"). El analytics relajado solo absorbe el logError del camino de fallo.
+    // STATE — el STUB enlata un failure sin mensaje y el reducer produce el fallback "Unknown
+    // error".
     @Test
     fun `null error message falls back to Unknown error`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
         coEvery { getArticle(1) } returns Result.failure(Exception())
 
-        val viewModel = ArticleDetailViewModel(
-            getArticle = getArticle,
-            analytics = analytics,
-            savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
-        )
-        mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
+        val viewModel = createViewModel(getArticle)
+        advance()
 
-        val state = viewModel.uiState.value
-        assertTrue(state is UiState.Error)
-        assertEquals("Unknown error", (state as UiState.Error).message)
+        assertEquals(
+            ArticleDetailUiState.Error("Unknown error"),
+            viewModel.state.value,
+        )
     }
 
-    // BEHAVIORAL — verificación de interacción: se usa un MOCK local (shadowea la propiedad) con
-    // `verify` para assertear el evento de analytics. El STUB del UseCase solo aporta el éxito que
-    // dispara el efecto.
+    // BEHAVIORAL — el efecto one-shot de analytics se verifica con un MOCK local (`verify`).
     @Test
     fun `logs event on success`() = runTest {
-        // DOBLE — MOCK: la instancia local que recibe el VM es la que se verifica con `verify`.
         val analytics = mockk<AnalyticsHelper>(relaxed = true)
         val getArticle = mockk<GetArticleUseCase>()
         coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
-
         val viewModel = ArticleDetailViewModel(
             getArticle = getArticle,
             analytics = analytics,
             savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
         )
-        mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
+        advance()
 
         verify { analytics.logEvent("article_loaded", mapOf("id" to "1")) }
     }
 
-    // STATE — con el STUB devolviendo éxito, se assertea la transición a Success y el contenido
-    // del estado (título del artículo). Sin verificación de interacciones sobre el UseCase.
+    // STATE — éxito: el reducer construye Content con el artículo del STUB.
     @Test
-    fun `loadArticle on success populates detail on success`() = runTest {
+    fun `successful load emits content state`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
         coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
 
-        val viewModel = ArticleDetailViewModel(
-            getArticle = getArticle,
-            analytics = analytics,
-            savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
-        )
-        mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
+        val viewModel = createViewModel(getArticle)
+        advance()
 
-        val state = viewModel.uiState.value
-        assertTrue(state is UiState.Success)
-        val data = (state as UiState.Success).data
-        assertEquals("Article Detail", data.article.title)
+        assertEquals(
+            ArticleDetailUiState.Content(TestArticleData.articleDetail),
+            viewModel.state.value,
+        )
     }
 
-    // STATE — el STUB enlata un fallo y se assertea el estado Error con su mensaje; el analytics
-    // relajado absorbe el logError sin que el test lo verifique.
+    // STATE — fallo: el reducer construye Error con el mensaje del STUB.
     @Test
-    fun `loadArticle on failure sets error`() = runTest {
+    fun `failed load emits error state`() = runTest {
         val getArticle = mockk<GetArticleUseCase>()
         coEvery { getArticle(1) } returns Result.failure(Exception("Not found"))
 
-        val viewModel = ArticleDetailViewModel(
-            getArticle = getArticle,
-            analytics = analytics,
-            savedStateHandle = SavedStateHandle(mapOf("articleId" to 1)),
-        )
-        mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
+        val viewModel = createViewModel(getArticle)
+        advance()
 
-        val state = viewModel.uiState.value
-        assertTrue(state is UiState.Error)
-        assertEquals("Not found", (state as UiState.Error).message)
+        assertEquals(ArticleDetailUiState.Error("Not found"), viewModel.state.value)
     }
 
-    // STATE — contrato defensivo: sin `articleId` en el SavedStateHandle (objeto real), el
-    // constructor lanza IllegalStateException. El UseCase es DUMMY: la construcción falla antes de
-    // usarlo y el analytics tampoco llega a recibir el logScreenView del init.
+    // BEHAVIORAL — Delete sobre contenido: NO muta el estado, emite NavigateBack (efecto one-shot)
+    // y registra el evento de analytics (MOCK verificado).
+    @Test
+    fun `delete on content emits navigate back effect and logs event`() = runTest {
+        val getArticle = mockk<GetArticleUseCase>()
+        coEvery { getArticle(1) } returns Result.success(TestArticleData.articleDetail)
+        val viewModel = createViewModel(getArticle)
+        advance()
+
+        viewModel.effects.test {
+            viewModel.onIntent(ArticleDetailIntent.Delete)
+            advance()
+
+            assertEquals(ArticleDetailEffect.NavigateBack, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        verify { analytics.logEvent("article_deleted", mapOf("id" to "1")) }
+    }
+
+    // STATE + BEHAVIORAL (negativo) — Delete fuera de Content: no navega ni loguea. Se assertea
+    // que NO hay eventos (estado) y que no hubo interacción (behavioral).
+    @Test
+    fun `delete outside content does nothing`() = runTest {
+        val getArticle = mockk<GetArticleUseCase>()
+        coEvery { getArticle(1) } returns Result.failure(Exception("Not found"))
+        val viewModel = createViewModel(getArticle)
+        advance()
+
+        viewModel.effects.test {
+            viewModel.onIntent(ArticleDetailIntent.Delete)
+            advance()
+
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+        verify(exactly = 0) { analytics.logEvent("article_deleted", any()) }
+    }
+
+    // STATE — contrato defensivo del constructor (SavedStateHandle real): sin `articleId` lanza
+    // IllegalStateException. El UseCase es DUMMY (la construcción falla antes de usarlo).
     @Test
     fun `throws when articleId missing from savedStateHandle`() {
         val getArticle = mockk<GetArticleUseCase>()
@@ -153,6 +168,6 @@ class ArticleDetailViewModelTest {
                 savedStateHandle = SavedStateHandle(),
             )
         }
-        assertTrue(exception.message?.contains("articleId") == true)
+        org.junit.Assert.assertTrue(exception.message?.contains("articleId") == true)
     }
 }

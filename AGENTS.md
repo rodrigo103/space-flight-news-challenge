@@ -28,6 +28,7 @@ Reglas:
 ## Arquitectura
 
 - MVVM con `ViewModel` + `StateFlow<UiState>`.
+- **MVI (rama `feature/mvi`)**: `Intent` sealed → `Channel` serializado → `Result` → **reducer puro** → `StateFlow<UiState>`; efectos one-shot (navegación) por `Channel<Effect>`. Reducers en `ArticlesListReducer.kt` y `ArticleDetailReducer.kt`.
 - `UiState` es una `sealed interface` con `Loading`, `Success<T>`, `Error`.
 - Repository devuelve `Result<T>`.
 - Hilt DI con módulos por capa: `AppModule`, `NetworkModule`, `DatabaseModule`, `RepositoryModule`, etc.

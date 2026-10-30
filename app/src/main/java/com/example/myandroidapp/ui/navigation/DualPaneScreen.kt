@@ -21,13 +21,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myandroidapp.R
+import com.example.myandroidapp.ui.articles.detail.ArticleDetailPaneIntent
 import com.example.myandroidapp.ui.articles.detail.ArticleDetailPaneViewModel
+import com.example.myandroidapp.ui.articles.detail.ArticleDetailUiState
 import com.example.myandroidapp.ui.articles.detail.articleDetailContentSettings
 import com.example.myandroidapp.ui.articles.list.ArticlesListActions
 import com.example.myandroidapp.ui.articles.list.ArticlesListAttributes
+import com.example.myandroidapp.ui.articles.list.ArticlesListEffect
+import com.example.myandroidapp.ui.articles.list.ArticlesListIntent
 import com.example.myandroidapp.ui.articles.list.ArticlesListScreen
 import com.example.myandroidapp.ui.articles.list.ArticlesListViewModel
-import com.example.myandroidapp.ui.common.UiState
 
 @Composable
 fun DualPaneScreen(
@@ -37,7 +40,15 @@ fun DualPaneScreen(
     listViewModel: ArticlesListViewModel = hiltViewModel(),
     detailViewModel: ArticleDetailPaneViewModel = hiltViewModel(),
 ) {
-    val searchQuery by listViewModel.searchQuery.collectAsStateWithLifecycle()
+    val listState by listViewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(listViewModel) {
+        listViewModel.effects.collect { effect ->
+            when (effect) {
+                is ArticlesListEffect.OpenArticle -> onArticleSelected(effect.articleId)
+            }
+        }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.weight(1f)) {
@@ -46,14 +57,22 @@ fun DualPaneScreen(
                 .fillMaxSize()) {
                 ArticlesListScreen(
                     attributes = ArticlesListAttributes(
-                        searchQuery = searchQuery,
+                        searchQuery = listState.searchQuery,
                         articles = listViewModel.articles,
                     ),
                     actions = ArticlesListActions(
-                        onSearchTextChange = listViewModel::onSearchTextChange,
-                        onClearSearch = listViewModel::clearSearch,
-                        onArticleClick = onArticleSelected,
-                        sendAnalytics = listViewModel::sendAnalytics,
+                        onSearchTextChange = {
+                            listViewModel.onIntent(ArticlesListIntent.SearchQueryChanged(it))
+                        },
+                        onClearSearch = {
+                            listViewModel.onIntent(ArticlesListIntent.ClearSearch)
+                        },
+                        onArticleClick = {
+                            listViewModel.onIntent(ArticlesListIntent.ArticleClicked(it))
+                        },
+                        sendAnalytics = { event, properties ->
+                            listViewModel.onIntent(ArticlesListIntent.SendAnalytics(event, properties))
+                        },
                     ),
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -89,18 +108,18 @@ private fun DetailPane(
         }
     } else {
         LaunchedEffect(articleId) {
-            viewModel.loadArticle(articleId)
+            viewModel.onIntent(ArticleDetailPaneIntent.Load(articleId))
         }
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val state by viewModel.state.collectAsStateWithLifecycle()
         when (val s = state) {
-            is UiState.Loading -> Box(
+            is ArticleDetailUiState.Loading -> Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator()
             }
 
-            is UiState.Error -> Box(
+            is ArticleDetailUiState.Error -> Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -111,15 +130,15 @@ private fun DetailPane(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     androidx.compose.material3.Button(
-                        onClick = { viewModel.loadArticle(articleId) }
+                        onClick = { viewModel.onIntent(ArticleDetailPaneIntent.Load(articleId)) }
                     ) {
                         Text(stringResource(R.string.retry))
                     }
                 }
             }
 
-            is UiState.Success -> articleDetailContentSettings(
-                article = s.data.article
+            is ArticleDetailUiState.Content -> articleDetailContentSettings(
+                article = s.article
             )()
         }
     }

@@ -8,26 +8,40 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myandroidapp.ui.common.UiState
 
+/**
+ * Route MVI del detalle: traduce el estado MVI al contrato visual de la pantalla, mapea acciones a
+ * [ArticleDetailIntent]s y consume el efecto one-shot [ArticleDetailEffect.NavigateBack].
+ */
 @Composable
 fun ArticleDetailScreenRoute(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ArticleDetailViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(state) {
-        if ((state as? UiState.Success)?.data?.navigateBack == true) {
-            onBack()
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                ArticleDetailEffect.NavigateBack -> onBack()
+            }
         }
     }
 
+    val screenState: UiState<ArticleDetailState> = when (val current = state) {
+        ArticleDetailUiState.Loading -> UiState.Loading
+        is ArticleDetailUiState.Content ->
+            UiState.Success(ArticleDetailState(article = current.article))
+
+        is ArticleDetailUiState.Error -> UiState.Error(current.message)
+    }
+
     ArticleDetailScreen(
-        attributes = ArticleDetailAttributes(state = state),
+        attributes = ArticleDetailAttributes(state = screenState),
         actions = ArticleDetailActions(
             onBack = onBack,
-            onRetry = viewModel::loadArticle,
-            onDelete = viewModel::onDeleteArticle,
+            onRetry = { viewModel.onIntent(ArticleDetailIntent.Retry) },
+            onDelete = { viewModel.onIntent(ArticleDetailIntent.Delete) },
         ),
         modifier = modifier,
     )
